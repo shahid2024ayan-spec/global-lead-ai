@@ -16,7 +16,7 @@ A mobile-first, evidence-first client and opportunity intelligence platform.
 - All database tables have RLS enabled; browser clients use only a publishable key
 
 ## Stack
-- React 18 + TypeScript + Vite
+- React 18 + TypeScript + Vite 8
 - Supabase JS 2.119.0 (pinned)
 - PostgreSQL 17 on Supabase
 - Vercel deployment target
