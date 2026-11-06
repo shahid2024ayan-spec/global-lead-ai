@@ -93,3 +93,19 @@
 .skill-empty{min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;margin-top:18px}
 .skill-empty strong{font-size:11px}.skill-empty p{font-size:10px;color:var(--muted);line-height:1.6;max-width:430px}
 @media(max-width:720px){.skill-intelligence-page{padding:24px 16px}.skill-hero h1{font-size:28px}.skill-hero-icon{width:68px;height:68px;flex:0 0 auto}.skill-form,.skill-section-grid{grid-template-columns:1fr}.skill-generate-button{width:100%}.skill-profile-heading{align-items:flex-start;flex-direction:column}}
+
+
+/* Module 04 — execute AI-generated queries with live Tavily results */
+.query-line{align-items:flex-start}
+.query-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.query-actions button{display:grid;place-items:center;width:25px;height:25px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--accent);cursor:pointer}
+.query-actions button:disabled{opacity:.45;cursor:wait}
+.generated-search-panel{margin-top:15px;padding:17px}
+.generated-search-panel .card-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.generated-search-panel .card-title h3{font:600 13px 'Space Grotesk';margin:0}
+.generated-search-panel .card-title p{font-size:10px;color:var(--muted);line-height:1.6;overflow-wrap:anywhere}
+.generated-search-time{display:block;color:var(--muted);font-size:9px;margin:10px 0}
+.generated-search-result{padding:13px 0;border-top:1px solid var(--line)}
+.generated-search-result strong{font-size:11px;line-height:1.5}
+.generated-search-result p{font-size:10px;color:var(--muted);line-height:1.7;margin:7px 0}
+.generated-search-result a{display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-size:9px;text-decoration:none}
