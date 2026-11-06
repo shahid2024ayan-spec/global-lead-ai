@@ -11,6 +11,7 @@ import LiveDiscovery from '../features/integrations/LiveDiscovery'
 import SkillIntelligence from '../features/integrations/SkillIntelligence'
 import BusinessDiscovery from '../features/businesses/BusinessDiscovery'
 import SocialDiscovery from '../features/social/SocialDiscovery'
+import CRM from '../features/crm/CRM'
 
 type Section = 'Overview' | 'Discover' | 'Businesses' | 'Social opportunities' | 'CRM' | 'Intelligence' | 'Settings'
 const navigation: { label: Section; icon: typeof LayoutDashboard; group: string }[] = [
@@ -71,7 +72,7 @@ function App() {
     <main className="main-area">
       <header className="topbar"><div className="topbar-left"><button className="mobile-menu" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu size={20}/></button><span className="breadcrumb">Workspace <span>/</span> {section}</span></div><div className="topbar-actions"><span className="system-status"><i/> Systems ready</span><button className="icon-button" aria-label="Notifications"><Bell size={18}/></button><button className="icon-button" aria-label="Toggle theme" onClick={() => setDark(!dark)}>{dark ? <Sun size={18}/> : <Moon size={18}/>}</button><button className="top-avatar account-avatar" onClick={() => signOut().catch(error => setNotice(error.message))} title="Sign out" aria-label="Sign out">{(user.email?.[0] ?? 'U').toUpperCase()}</button></div></header>
 
-      {section === 'Settings' ? <div className="page-content"><div className="subpage"><IntegrationSettings/></div></div> : section === 'Businesses' ? <BusinessDiscovery userId={user.id}/> : section === 'Social opportunities' ? <SocialDiscovery userId={user.id}/> : section === 'Discover' ? <LiveDiscovery/> : section === 'Overview' ? <div className="page-content">
+      {section === 'Settings' ? <div className="page-content"><div className="subpage"><IntegrationSettings/></div></div> : section === 'Businesses' ? <BusinessDiscovery userId={user.id}/> : section === 'Social opportunities' ? <SocialDiscovery userId={user.id}/> : section === 'CRM' ? <CRM userId={user.id}/> : section === 'Discover' ? <LiveDiscovery/> : section === 'Overview' ? <div className="page-content">
         <div className="welcome-row"><div><div className="eyebrow"><span className="eyebrow-dot"/> GLOBAL OPPORTUNITY INTELLIGENCE</div><h1>{section === 'Overview' ? <>Find your next<br/><span className="gradient-text">great client.</span></> : <>Discover your next<br/><span className="gradient-text">opportunity.</span></>}</h1><p className="welcome-copy">Turn your skills into a global opportunity pipeline. Find businesses that need you, spot active demand, and build relationships that grow.</p></div><div className="hero-orb"><div className="orb-ring ring-one"/><div className="orb-ring ring-two"/><div className="orb-core"><Globe2 size={38}/></div><span className="orb-tag tag-one">GLOBAL</span><span className="orb-tag tag-two">AI POWERED</span></div></div>
 
         <section className="search-panel"><div className="panel-heading"><div className="panel-icon"><Search size={19}/></div><div><h2>Build your opportunity search</h2><p>Tell us what you offer and where you want to find demand.</p></div><span className="step-label">01 <span>/ 03</span></span></div>
