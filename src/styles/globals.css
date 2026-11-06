@@ -162,3 +162,8 @@
 .business-gap-list{margin:8px 0;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
 .business-gap-list strong{font-size:9px;color:var(--muted)}
 .business-gap-list ul{margin:6px 0 0;padding-left:17px;color:var(--muted2);font-size:9px;line-height:1.7}
+
+.candidate-evidence-toggle{margin-top:8px;border:0;background:transparent;color:#b6a4ff;font:600 9px 'DM Sans';padding:0;cursor:pointer}
+.evidence-row{display:grid;gap:5px;padding:8px 0;border-bottom:1px solid var(--line);font-size:9px;line-height:1.5;color:var(--muted2)}
+.evidence-row:last-child{border-bottom:0}
+.evidence-row a{display:inline-flex;align-items:center;gap:4px;color:#b6a4ff;text-decoration:none}
