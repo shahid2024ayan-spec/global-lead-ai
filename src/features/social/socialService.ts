@@ -18,7 +18,7 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
  if(jobError){await supabase.from('search_projects').update({status:'failed'}).eq('id',project.id).eq('user_id',input.userId);throw jobError}
  try{
   const query=`public posts from people looking for or requesting ${skill} freelancer, agency or service provider in ${market}; opportunities, hiring requests and project requests on LinkedIn Facebook X social media`
-  const {data:response,error:searchError}=await supabase.functions.invoke('lead-discovery',{body:{query,maxResults,searchDepth:'advanced'}})
+  const {data:response,error:searchError}=await supabase.functions.invoke('lead-discovery',{body:{query,maxResults,searchDepth:'basic'}})
   if(searchError){let message=searchError.message||'The public search provider failed.';const context=(searchError as {context?:unknown}).context;if(context&&typeof context==='object'&&'json' in context&&typeof (context as Response).json==='function'){try{const p=await (context as Response).json();if(typeof p?.error==='string')message=p.error}catch{/* retain safe message */}}throw new Error(message)}
   if(!response||response.status!=='ok'||!Array.isArray(response.results))throw new Error(response?.error||'The search response was invalid.')
   const allowed=response.results.filter((item:{title?:unknown;url?:unknown;content?:unknown})=>typeof item.url==='string'&&/^https?:\/\//i.test(item.url)&&typeof item.content==='string'&&item.content.trim().length>=30&&['linkedin.com','facebook.com','fb.com','x.com','twitter.com','threads.net'].some(domain=>new URL(item.url).hostname.toLowerCase().replace(/^www\./,'')===domain||new URL(item.url).hostname.toLowerCase().endsWith('.'+domain)))
