@@ -133,3 +133,25 @@
 
 /* Module 06 — Public social opportunity discovery */
 .social-post-preview{font-size:10px;line-height:1.65;color:var(--text);opacity:.86;white-space:pre-wrap;overflow-wrap:anywhere;margin:9px 0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Module 09 — CRM pipeline */
+.crm-stage-strip{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+.crm-stage-chip{display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--line);border-radius:20px;color:var(--muted);font-size:9px;text-transform:capitalize;background:var(--panel)}
+.crm-stage-chip span{font-weight:700;color:#b8a6ff}
+.crm-lead-list{display:grid;gap:12px}
+.crm-lead-card{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.crm-lead-heading{display:flex;align-items:center;gap:11px;margin-bottom:15px}
+.crm-lead-title{min-width:0;flex:1}
+.crm-lead-title h3{font:600 13px 'Space Grotesk';margin:0;overflow-wrap:anywhere}
+.crm-lead-title p{font-size:9px;color:var(--muted);margin:4px 0 0}
+.crm-lead-heading>a{color:#b6a4ff}
+.crm-edit-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.crm-edit-grid input,.crm-note-field textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);color:var(--text);font:500 10px 'DM Sans';outline:none}
+.crm-note-field{margin-top:12px}
+.crm-note-field textarea{resize:vertical;line-height:1.5}
+.crm-saving{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:9px;margin-top:8px}
+.candidate-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.candidate-save-button{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid #9276ff45;border-radius:6px;background:#8b6bff14;color:#bbaaff;font:600 9px 'DM Sans';cursor:pointer}
+.candidate-save-button:disabled{opacity:.55;cursor:wait}
+@media(max-width:760px){.crm-edit-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:420px){.crm-edit-grid{grid-template-columns:1fr}}
