@@ -40,7 +40,17 @@ export type SkillIntelligenceProfile = {
 export async function generateSkillIntelligence(input: { skill: string; market: string; niche?: string; languages?: string[] }) {
   if (!supabase) throw new Error('Supabase is not configured.')
   const { data, error } = await supabase.functions.invoke('skill-intelligence', { body: input })
-  if (error) throw new Error(error.message || 'Could not generate skill intelligence.')
+  if (error) {
+    let serverMessage = ''
+    const context = (error as { context?: unknown }).context
+    if (context && typeof context === 'object' && 'json' in context && typeof (context as Response).json === 'function') {
+      try {
+        const payload = await (context as Response).json()
+        if (typeof payload?.error === 'string') serverMessage = payload.error
+      } catch { /* keep the safe generic message */ }
+    }
+    throw new Error(serverMessage || error.message || 'Could not generate skill intelligence.')
+  }
   if (!data || data.status !== 'ok' || !data.profile) throw new Error(data?.error || 'The AI response was invalid.')
   return data as { status: 'ok'; provider: 'gemini'; model: string; generatedAt: string; profile: SkillIntelligenceProfile; note: string }
 }
