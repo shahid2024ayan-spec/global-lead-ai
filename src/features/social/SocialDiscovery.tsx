@@ -2,7 +2,6 @@ import{useEffect,useState}from'react'
 import{MessagesSquare,ExternalLink,LoaderCircle,RefreshCw,Search,ShieldCheck,CircleAlert,CheckCircle2,BookmarkPlus}from'lucide-react'
 import{discoverSocialOpportunities,loadSocialOpportunities,type SocialOpportunity}from'./socialService'
 import{saveSocialToCrm}from'../crm/crmService'
-import{saveSocialToCrm}from'../crm/crmService'
 export default function SocialDiscovery({userId}:{userId:string}){
  const[skill,setSkill]=useState('Web development'),[market,setMarket]=useState('Worldwide'),[items,setItems]=useState<SocialOpportunity[]>([])
  const[loading,setLoading]=useState(false),[refreshing,setRefreshing]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState(''),[savingLead,setSavingLead]=useState('')
