@@ -39,3 +39,4 @@ export default function IntegrationSettings() {
     {!status && loading && <div className="integration-loading"><span className="loading-spinner"/> Checking secure provider configuration…</div>}
     <div className="integration-security"><ShieldCheck size={16}/><span>Never paste API secrets into chat or browser code. Add credentials only to Supabase Edge Function secrets. No provider is marked connected until its server-side credential is present.</span></div>
   </div>
+}
