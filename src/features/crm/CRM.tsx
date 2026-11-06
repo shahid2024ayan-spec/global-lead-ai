@@ -1,5 +1,5 @@
 import{useEffect,useState}from'react'
-import{Users,ExternalLink,LoaderCircle,RefreshCw,ShieldCheck,CircleAlert,Save,CalendarClock,BriefcaseBusiness}from'lucide-react'
+import{Users,ExternalLink,LoaderCircle,RefreshCw,ShieldCheck,CircleAlert,BriefcaseBusiness}from'lucide-react'
 import{loadCRMLeads,updateCRMLead,type CRMLead}from'./crmService'
 const stages=['new','qualified','contacted','replied','interested','negotiation','won','lost']
 export default function CRM({userId}:{userId:string}){
