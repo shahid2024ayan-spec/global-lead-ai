@@ -109,3 +109,24 @@
 .generated-search-result strong{font-size:11px;line-height:1.5}
 .generated-search-result p{font-size:10px;color:var(--muted);line-height:1.7;margin:7px 0}
 .generated-search-result a{display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-size:9px;text-decoration:none}
+
+/* Module 05 — Business discovery */
+.business-query-form{grid-template-columns:1fr 1fr auto}
+.business-query-form input{height:43px;width:100%;border:1px solid var(--line);border-radius:8px;padding:0 11px;background:var(--bg);color:var(--text);font:500 11px 'DM Sans';outline:none}
+.business-query-form input:focus{border-color:#967cff}
+.business-list-heading{display:flex;align-items:center;justify-content:space-between;margin:28px 0 13px}
+.business-list-heading h2{font:600 16px 'Space Grotesk';margin:0}
+.business-list-heading p{font-size:10px;color:var(--muted);margin:5px 0 0}
+.business-list-heading .secondary-button{height:34px;background:var(--panel2);border:1px solid var(--line);color:var(--text)}
+.business-candidate-list{display:grid;gap:10px}
+.business-candidate-card{display:flex;gap:13px;padding:16px;border:1px solid var(--line);border-radius:11px;background:var(--panel)}
+.business-candidate-icon{flex:0 0 38px;width:38px;height:38px;border-radius:10px;background:#8b6bff20;color:#b7a5ff;display:grid;place-items:center}
+.business-candidate-main{min-width:0;flex:1}
+.business-candidate-top{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.business-candidate-top h3{font:600 13px 'Space Grotesk';margin:0;overflow-wrap:anywhere}
+.candidate-status{font-size:8px;text-transform:uppercase;letter-spacing:.5px;padding:5px 7px;border-radius:20px;background:#e6a23c18;color:#e8b968;white-space:nowrap}
+.business-candidate-main>p{font-size:10px;color:var(--muted);margin:7px 0}
+.business-candidate-meta{display:flex;flex-wrap:wrap;gap:13px;color:var(--muted2);font-size:9px;margin-bottom:8px}
+.business-candidate-main>a{display:inline-flex;align-items:center;gap:5px;color:#b6a4ff;font-size:10px;text-decoration:none}
+.business-notice{display:flex;align-items:center;gap:8px}
+@media(max-width:760px){.business-query-form{grid-template-columns:1fr}.business-candidate-top{align-items:flex-start;flex-direction:column;gap:7px}.business-candidate-card{padding:13px}.business-list-heading{margin-top:22px}}
