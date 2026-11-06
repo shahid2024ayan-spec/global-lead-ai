@@ -25,3 +25,22 @@ export async function runPublicSearch(query: string, maxResults = 10) {
   if (!data || data.status !== 'ok' || !Array.isArray(data.results)) throw new Error(data?.error || 'The search response was invalid.')
   return data as { status: 'ok'; provider: 'tavily'; query: string; resultCount: number; searchedAt: string; results: PublicSearchResult[] }
 }
+
+export type SkillIntelligenceProfile = {
+  primarySkill: string
+  category: string
+  relatedServices: string[]
+  synonyms: string[]
+  buyerIntentKeywords: string[]
+  problemKeywords: string[]
+  longTailQueries: string[]
+  tavilyQueries: { business: string[]; social: string[]; hiring: string[]; communities: string[] }
+  excludeKeywords: string[]
+}
+export async function generateSkillIntelligence(input: { skill: string; market: string; niche?: string; languages?: string[] }) {
+  if (!supabase) throw new Error('Supabase is not configured.')
+  const { data, error } = await supabase.functions.invoke('skill-intelligence', { body: input })
+  if (error) throw new Error(error.message || 'Could not generate skill intelligence.')
+  if (!data || data.status !== 'ok' || !data.profile) throw new Error(data?.error || 'The AI response was invalid.')
+  return data as { status: 'ok'; provider: 'gemini'; model: string; generatedAt: string; profile: SkillIntelligenceProfile; note: string }
+}
