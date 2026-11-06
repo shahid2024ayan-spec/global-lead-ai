@@ -29,3 +29,12 @@ export async function updateCRMLead(userId:string,id:string,updates:{crm_status?
  const{error}=await supabase.from('saved_leads').update(updates).eq('id',id).eq('user_id',userId)
  if(error)throw error
 }
+
+export type OutreachDraft={status:'ok';draftId:string;channel:string;subject:string|null;message:string;model:string;createdAt:string;note:string}
+export async function generateOutreachDraft(savedLeadId:string,channel:string,tone='professional'):Promise<OutreachDraft>{
+ if(!supabase)throw new Error('Database connection is not configured.')
+ const {data,error}=await supabase.functions.invoke('outreach-draft',{body:{savedLeadId,channel,tone}})
+ if(error){let message=error.message||'Could not generate outreach draft.';const context=(error as {context?:unknown}).context;if(context&&typeof context==='object'&&'json' in context&&typeof(context as Response).json==='function'){try{const p=await(context as Response).json();if(typeof p?.error==='string')message=p.error}catch{/* keep safe message */}}throw new Error(message)}
+ if(!data||data.status!=='ok')throw new Error(data?.error||'Draft response was invalid.')
+ return data as OutreachDraft
+}
