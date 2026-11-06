@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Sparkles, Globe2, Languages, Search, Copy, LoaderCircle, ShieldCheck, Lightbulb, Target, BriefcaseBusiness, Filter } from 'lucide-react'
-import { generateSkillIntelligence, type SkillIntelligenceProfile } from './integrationService'
+import { Sparkles, Globe2, Languages, Search, Copy, LoaderCircle, ShieldCheck, Lightbulb, Target, BriefcaseBusiness, Filter, ExternalLink } from 'lucide-react'
+import { generateSkillIntelligence, runPublicSearch, type PublicSearchResult, type SkillIntelligenceProfile } from './integrationService'
 
 const sections = [
   { key: 'relatedServices', title: 'Related services', icon: BriefcaseBusiness, description: 'Adjacent services you can offer or bundle.' },
@@ -20,10 +20,15 @@ export default function SkillIntelligence() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState('')
+  const [searchingQuery, setSearchingQuery] = useState('')
+  const [searchError, setSearchError] = useState('')
+  const [searchResults, setSearchResults] = useState<PublicSearchResult[]>([])
+  const [searchTimestamp, setSearchTimestamp] = useState('')
 
   const generate = async (event: React.FormEvent) => {
     event.preventDefault()
     setLoading(true); setError(''); setProfile(null); setCopied('')
+    setSearchResults([]); setSearchError(''); setSearchingQuery(''); setSearchTimestamp('')
     try {
       const result = await generateSkillIntelligence({ skill, market, niche, languages: [language] })
       setProfile(result.profile)
@@ -35,6 +40,16 @@ export default function SkillIntelligence() {
   const copyText = async (key: string, value: string) => {
     try { await navigator.clipboard.writeText(value); setCopied(key) }
     catch { setError('Clipboard access was blocked. Select and copy the text manually.') }
+  }
+
+  const searchQuery = async (query: string) => {
+    setSearchingQuery(query); setSearchError(''); setSearchResults([]); setSearchTimestamp('')
+    try {
+      const response = await runPublicSearch(query, 10)
+      setSearchResults(response.results); setSearchTimestamp(response.searchedAt)
+    } catch (reason) {
+      setSearchError(reason instanceof Error ? reason.message : 'Could not search this query.')
+    } finally { setSearchingQuery('') }
   }
 
   return <div className="page-content skill-intelligence-page">
@@ -66,9 +81,16 @@ export default function SkillIntelligence() {
         </article> })}
       </div>
       <section className="content-card tavily-query-card">
-        <div className="card-title"><div><h3><Search size={16}/> Tavily-ready discovery queries</h3><p>Use these phrases in Discover. Review each result before treating it as a lead.</p></div></div>
-        {Object.entries(profile.tavilyQueries).map(([group, queries]) => <div className="query-group" key={group}><div className="query-group-heading"><strong>{group}</strong><button onClick={() => void copyText('query-' + group, queries.join('\n'))}><Copy size={12}/>{copied === 'query-' + group ? 'Copied' : 'Copy'}</button></div>{queries.map((query, index) => <div className="query-line" key={index}><span>{query}</span><button aria-label="Copy query" onClick={() => void copyText('single-' + group + index, query)}><Copy size={12}/></button></div>)}</div>)}
+        <div className="card-title"><div><h3><Search size={16}/> Tavily-ready discovery queries</h3><p>Run any generated query against live public web search. Each search returns real indexed pages, not qualified leads.</p></div></div>
+        {Object.entries(profile.tavilyQueries).map(([group, queries]) => <div className="query-group" key={group}><div className="query-group-heading"><strong>{group}</strong><button onClick={() => void copyText('query-' + group, queries.join('\n'))}><Copy size={12}/>{copied === 'query-' + group ? 'Copied' : 'Copy'}</button></div>{queries.map((query, index) => <div className="query-line" key={index}><span>{query}</span><div className="query-actions"><button aria-label="Search this query" title="Search live web" disabled={!!searchingQuery} onClick={() => void searchQuery(query)}><Search size={13}/></button><button aria-label="Copy query" title="Copy query" onClick={() => void copyText('single-' + group + index, query)}><Copy size={12}/></button></div></div>)}</div>)}
       </section>
+      {(searchingQuery || searchError || searchTimestamp) && <section className="content-card generated-search-panel">
+        <div className="card-title"><div><h3>Live search results</h3><p>{searchingQuery ? 'Searching Tavily for: ' + searchingQuery : 'Query: ' + (searchTimestamp ? 'completed' : 'not completed')}</p></div>{searchingQuery && <LoaderCircle size={17} className="skill-spin"/>}</div>
+        {searchError && <div className="integration-error">{searchError}</div>}
+        {searchTimestamp && <small className="generated-search-time">Checked {new Date(searchTimestamp).toLocaleString()} · {searchResults.length} results</small>}
+        {searchResults.map((item, index) => <article className="generated-search-result" key={item.url || index}><strong>{item.title || 'Untitled page'}</strong><p>{item.content}</p><a href={item.url} target="_blank" rel="noreferrer">Open source <ExternalLink size={12}/></a></article>)}
+        {searchTimestamp && !searchResults.length && <p className="skill-no-items">No indexed pages returned. Try another query.</p>}
+      </section>}
       <div className="skill-disclaimer"><ShieldCheck size={15}/><span>AI-generated suggestions, not verified market demand. Search results need source checks, recency checks and human qualification. No client or budget has been invented.</span></div>
     </>}
     {!profile && !loading && <div className="content-card skill-empty"><div className="empty-graphic"><Sparkles size={22}/></div><strong>Your skill intelligence report will appear here</strong><p>Generate a profile to reveal related services, buyer language and discovery query packs.</p></div>}
