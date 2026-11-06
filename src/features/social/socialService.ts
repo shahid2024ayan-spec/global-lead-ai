@@ -45,3 +45,10 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
   return{searchedCount:response.results.length as number,candidateCount:allowed.length,savedCount:rows.length,duplicateCount:allowed.length-rows.length,query:response.query as string,searchedAt:response.searchedAt as string}
  }catch(error){const message=error instanceof Error?error.message:'Social opportunity discovery failed.';await supabase.from('search_jobs').update({status:'failed',error_message:message.slice(0,500)}).eq('id',job.id).eq('user_id',input.userId);await supabase.from('search_projects').update({status:'failed'}).eq('id',project.id).eq('user_id',input.userId);throw error}
 }
+export async function scoreSocialOpportunity(socialOpportunityId:string){
+ if(!supabase)throw new Error('Database connection is not configured.')
+ const {data,error}=await supabase.functions.invoke('social-opportunity-score',{body:{socialOpportunityId}})
+ if(error){let message=error.message||'Could not score this opportunity.';const context=(error as {context?:unknown}).context;if(context&&typeof context==='object'&&'json' in context&&typeof(context as Response).json==='function'){try{const p=await(context as Response).json();if(typeof p?.error==='string')message=p.error}catch{/* keep safe error */}}throw new Error(message)}
+ if(!data||data.status!=='ok')throw new Error(data?.error||'Scoring response was invalid.')
+ return data as {status:'ok';score:number;scoreParts:Record<string,number>;explicitBuyingIntent:boolean;urgency:string;budgetText:string|null;scoreReason:string;postedDaysAgo:number|null}
+}
