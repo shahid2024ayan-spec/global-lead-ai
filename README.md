@@ -15,6 +15,13 @@ A mobile-first, evidence-first client and opportunity intelligence platform.
 - Core schema for businesses, social opportunities, evidence, saved leads, CRM, outreach drafts, search jobs, keywords, and notifications
 - All database tables have RLS enabled; browser clients use only a publishable key
 
+## Module 03 — API & Data Integration Engine
+- Authenticated Supabase Edge Function for provider configuration health
+- Provider registry for Google Places, SerpApi, Tavily, and Reddit API
+- Browser receives connection status only; provider secrets remain in server-side Edge Function secrets
+- Settings screen explains provider setup and links to official documentation
+- No live provider search is enabled until credentials are configured and provider adapters are implemented/tested
+
 ## Stack
 - React 18 + TypeScript + Vite 8
 - Supabase JS 2.119.0 (pinned)
@@ -46,12 +53,12 @@ src/
   features/
     auth/
     search/
-    workspace/
+    workspace/\n    integrations/
   lib/supabase.ts
   main.tsx
   styles/globals.css
 supabase/
-  migrations/
+  migrations/\n  functions/integration-status/
 ```
 
 ## Roadmap
