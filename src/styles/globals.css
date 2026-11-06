@@ -130,3 +130,6 @@
 .business-candidate-main>a{display:inline-flex;align-items:center;gap:5px;color:#b6a4ff;font-size:10px;text-decoration:none}
 .business-notice{display:flex;align-items:center;gap:8px}
 @media(max-width:760px){.business-query-form{grid-template-columns:1fr}.business-candidate-top{align-items:flex-start;flex-direction:column;gap:7px}.business-candidate-card{padding:13px}.business-list-heading{margin-top:22px}}
+
+/* Module 06 — Public social opportunity discovery */
+.social-post-preview{font-size:10px;line-height:1.65;color:var(--text);opacity:.86;white-space:pre-wrap;overflow-wrap:anywhere;margin:9px 0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
