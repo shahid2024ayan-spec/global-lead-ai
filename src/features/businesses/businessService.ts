@@ -1,8 +1,8 @@
 import { supabase } from '../../lib/supabase'
-export type BusinessLead = { id:string; business_name:string; website_url:string|null; country:string|null; city:string|null; category:string|null; source_name:string; source_url:string|null; lead_score:number; verification_status:string; created_at:string }
+export type BusinessLead = { id:string; business_name:string; website_url:string|null; country:string|null; city:string|null; category:string|null; source_name:string; source_url:string|null; lead_score:number; verification_status:string; created_at:string; website_quality:string|null; identified_gaps:string[]; recommended_service:string|null; score_reason:string|null }
 export async function loadBusinessLeads(userId:string):Promise<BusinessLead[]> {
   if(!supabase) throw new Error('Database connection is not configured.')
-  const {data,error}=await supabase.from('business_leads').select('id,business_name,website_url,country,city,category,source_name,source_url,lead_score,verification_status,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(100)
+  const {data,error}=await supabase.from('business_leads').select('id,business_name,website_url,country,city,category,source_name,source_url,lead_score,verification_status,created_at,website_quality,identified_gaps,recommended_service,score_reason').eq('user_id',userId).order('created_at',{ascending:false}).limit(100)
   if(error) throw error
   return (data??[]) as BusinessLead[]
 }
