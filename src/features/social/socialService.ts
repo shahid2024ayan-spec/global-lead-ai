@@ -21,7 +21,15 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
   const {data:response,error:searchError}=await supabase.functions.invoke('lead-discovery',{body:{query,maxResults,searchDepth:'basic'}})
   if(searchError){let message=searchError.message||'The public search provider failed.';const context=(searchError as {context?:unknown}).context;if(context&&typeof context==='object'&&'json' in context&&typeof (context as Response).json==='function'){try{const p=await (context as Response).json();if(typeof p?.error==='string')message=p.error}catch{/* retain safe message */}}throw new Error(message)}
   if(!response||response.status!=='ok'||!Array.isArray(response.results))throw new Error(response?.error||'The search response was invalid.')
-  const allowed=response.results.filter((item:{title?:unknown;url?:unknown;content?:unknown})=>typeof item.url==='string'&&/^https?:\/\//i.test(item.url)&&typeof item.content==='string'&&item.content.trim().length>=30&&['linkedin.com','facebook.com','fb.com','x.com','twitter.com','threads.net'].some(domain=>new URL(item.url).hostname.toLowerCase().replace(/^www\./,'')===domain||new URL(item.url).hostname.toLowerCase().endsWith('.'+domain)))
+  const allowed=response.results.flatMap((raw:unknown)=>{
+   if(!raw||typeof raw!=='object')return[]
+   const item=raw as Record<string,unknown>
+   if(typeof item.url!=='string'||typeof item.content!=='string'||item.content.trim().length<30||!/^https?:\\/\\//i.test(item.url))return[]
+   const host=new URL(item.url).hostname.toLowerCase().replace(/^www\\./,'')
+   const domains=['linkedin.com','facebook.com','fb.com','x.com','twitter.com','threads.net']
+   if(!domains.some(domain=>host===domain||host.endsWith('.'+domain)))return[]
+   return[{url:item.url,content:item.content,title:typeof item.title==='string'?item.title:'',publishedDate:typeof item.published_date==='string'?item.published_date:null}]
+  })
   const urls=[...new Set(allowed.map((item:{url:string})=>item.url))]
   let existing:string[]=[]
   if(urls.length){const {data,error}=await supabase.from('social_opportunities').select('post_url').eq('user_id',input.userId).in('post_url',urls);if(error)throw error;existing=(data??[]).map(row=>row.post_url)}
