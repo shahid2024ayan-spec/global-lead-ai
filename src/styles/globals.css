@@ -155,3 +155,10 @@
 .candidate-save-button:disabled{opacity:.55;cursor:wait}
 @media(max-width:760px){.crm-edit-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:420px){.crm-edit-grid{grid-template-columns:1fr}}
+
+/* Modules 07–08 — evidence enrichment and explainable scoring */
+.candidate-analyze-button{background:#36b6a515;border-color:#36b6a54a;color:#6ed8c3}
+.business-analysis-line{font-size:9px!important;line-height:1.55!important;color:var(--muted2)!important;margin:8px 0!important;overflow-wrap:anywhere}
+.business-gap-list{margin:8px 0;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.business-gap-list strong{font-size:9px;color:var(--muted)}
+.business-gap-list ul{margin:6px 0 0;padding-left:17px;color:var(--muted2);font-size:9px;line-height:1.7}
