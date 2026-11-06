@@ -1,9 +1,10 @@
 import {useEffect,useState} from 'react'
 import {Building2,ExternalLink,Globe2,LoaderCircle,RefreshCw,Search,ShieldCheck,CircleAlert,CheckCircle2,BookmarkPlus} from 'lucide-react'
 import {discoverBusinesses,loadBusinessLeads,type BusinessLead} from './businessService'
+import {saveBusinessToCrm} from '../crm/crmService'
 export default function BusinessDiscovery({userId}:{userId:string}) {
  const [skill,setSkill]=useState('Web development'),[market,setMarket]=useState('Worldwide'),[leads,setLeads]=useState<BusinessLead[]>([])
- const [loading,setLoading]=useState(false),[refreshing,setRefreshing]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('')
+ const [loading,setLoading]=useState(false),[refreshing,setRefreshing]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState(''),[savingLead,setSavingLead]=useState('')
  const refresh=async()=>{setRefreshing(true);try{setLeads(await loadBusinessLeads(userId))}catch(reason){setError(reason instanceof Error?reason.message:'Could not load saved candidates.')}finally{setRefreshing(false)}}
  useEffect(()=>{void refresh()},[userId])
  const saveToCRM=async(id:string)=>{setSavingLead(id);setError('');try{const added=await saveBusinessToCrm(userId,id);setNotice(added?'Business candidate added to CRM.':'This candidate is already in your CRM.')}catch(e){setError(e instanceof Error?e.message:'Could not save candidate to CRM.')}finally{setSavingLead('')}}
