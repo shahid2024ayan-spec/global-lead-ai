@@ -232,8 +232,11 @@ create index saved_leads_user_status_idx on public.saved_leads(user_id,crm_statu
 create index saved_leads_business_owner_idx on public.saved_leads(business_lead_id,user_id);
 create index saved_leads_social_owner_idx on public.saved_leads(social_opportunity_id,user_id);
 create index crm_activities_lead_owner_idx on public.crm_activities(saved_lead_id,user_id);
+create index crm_activities_user_idx on public.crm_activities(user_id);
 create index outreach_messages_lead_owner_idx on public.outreach_messages(saved_lead_id,user_id);
+create index outreach_messages_user_idx on public.outreach_messages(user_id);
 create index search_keywords_project_owner_idx on public.search_keywords(project_id,user_id);
+create index search_keywords_user_idx on public.search_keywords(user_id);
 create index notifications_user_unread_idx on public.notifications(user_id,created_at desc) where read_at is null;
 
 create trigger profiles_updated_at before update on public.profiles for each row execute function public.set_updated_at();
