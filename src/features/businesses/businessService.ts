@@ -50,3 +50,11 @@ export async function enrichBusinessLead(businessLeadId:string):Promise<Business
  if(!data||data.status!=='ok')throw new Error(data?.error||'The analysis response was invalid.')
  return data as BusinessAnalysis
 }
+
+export type LeadEvidence={id:string;evidence_type:string;description:string;evidence_url:string|null;observed_at:string}
+export async function loadBusinessEvidence(businessLeadId:string):Promise<LeadEvidence[]>{
+ if(!supabase)throw new Error('Database connection is not configured.')
+ const {data,error}=await supabase.from('lead_evidence').select('id,evidence_type,description,evidence_url,observed_at').eq('business_lead_id',businessLeadId).order('observed_at',{ascending:false}).limit(10)
+ if(error)throw error
+ return (data??[]) as LeadEvidence[]
+}
