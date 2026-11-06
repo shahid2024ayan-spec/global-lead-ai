@@ -42,3 +42,11 @@ export async function discoverBusinesses(input:{userId:string;skill:string;marke
     throw error
   }
 }
+export type BusinessAnalysis={status:'ok';leadId:string;model:string;score:number;scoreParts:Record<string,number>;websiteQuality:string;identifiedGaps:string[];recommendedService:string|null;evidenceSummary:string;evidenceCount:number;evidence:{title:string;url:string}[];verificationStatus:string;analyzedAt:string}
+export async function enrichBusinessLead(businessLeadId:string):Promise<BusinessAnalysis>{
+ if(!supabase)throw new Error('Database connection is not configured.')
+ const {data,error}=await supabase.functions.invoke('lead-enrich-score',{body:{businessLeadId}})
+ if(error){let message=error.message||'Could not analyze this business.';const context=(error as {context?:unknown}).context;if(context&&typeof context==='object'&&'json' in context&&typeof(context as Response).json==='function'){try{const p=await(context as Response).json();if(typeof p?.error==='string')message=p.error}catch{/* retain safe error */}}throw new Error(message)}
+ if(!data||data.status!=='ok')throw new Error(data?.error||'The analysis response was invalid.')
+ return data as BusinessAnalysis
+}
