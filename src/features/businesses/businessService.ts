@@ -6,41 +6,79 @@ export async function loadBusinessLeads(userId:string):Promise<BusinessLead[]> {
   if(error) throw error
   return (data??[]) as BusinessLead[]
 }
-export async function discoverBusinesses(input:{userId:string;skill:string;market:string;maxResults?:number}) {
-  if(!supabase) throw new Error('Database connection is not configured.')
-  const skill=input.skill.trim(), market=input.market.trim(), maxResults=Math.min(20,Math.max(1,input.maxResults??20))
-  if(skill.length<2||market.length<2) throw new Error('Enter a valid service and target market.')
-  const worldwide=market.toLowerCase()==='worldwide'
-  const {data:project,error:projectError}=await supabase.from('search_projects').insert({user_id:input.userId,name:`${skill} — ${market}`,target_scope:worldwide?'worldwide':'country',target_country:worldwide?null:market,source_mode:'businesses',status:'running',preferences:{skill,market,discovery:'businesses'}}).select('id').single()
-  if(projectError) throw projectError
-  const {data:job,error:jobError}=await supabase.from('search_jobs').insert({user_id:input.userId,project_id:project.id,status:'running',progress:5,started_at:new Date().toISOString()}).select('id').single()
-  if(jobError){await supabase.from('search_projects').update({status:'failed'}).eq('id',project.id).eq('user_id',input.userId);throw jobError}
-  try {
-    const query=`companies and businesses offering ${skill} services, official websites and service providers in ${market}`
-    const {data:response,error:searchError}=await supabase.functions.invoke('lead-discovery',{body:{query,maxResults,searchDepth:'basic'}})
-    if(searchError) {
-      let message=searchError.message||'The public search provider failed.'
-      const context=(searchError as {context?:unknown}).context
-      if(context&&typeof context==='object'&&'json' in context&&typeof (context as Response).json==='function'){try{const payload=await (context as Response).json();if(typeof payload?.error==='string')message=payload.error}catch{/* keep provider message */}}
-      throw new Error(message)
-    }
-    if(!response||response.status!=='ok'||!Array.isArray(response.results)) throw new Error(response?.error||'The search response was invalid.')
-    const candidates=response.results.filter((item:{title?:unknown;url?:unknown})=>typeof item.title==='string'&&item.title.trim().length>1&&typeof item.url==='string'&&/^https?:\/\//i.test(item.url))
-    const urls=[...new Set(candidates.map((item:{url:string})=>item.url))]
-    let existing:string[]=[]
-    if(urls.length){const {data,error}=await supabase.from('business_leads').select('source_url').eq('user_id',input.userId).in('source_url',urls);if(error)throw error;existing=(data??[]).map(row=>row.source_url).filter((url):url is string=>Boolean(url))}
-    const known=new Set(existing), fresh=candidates.filter((item:{url:string})=>!known.has(item.url))
-    const rows=fresh.map((item:{title:string;url:string})=>({user_id:input.userId,project_id:project.id,search_job_id:job.id,business_name:item.title.trim().slice(0,240),website_url:item.url,category:skill,source_name:'Tavily public web index',source_url:item.url,lead_score:0,score_reason:'Not scored yet. Requires verification and evidence review.',verification_status:'unverified'}))
-    if(rows.length){const {error}=await supabase.from('business_leads').insert(rows);if(error)throw error}
-    await supabase.from('search_jobs').update({status:'completed',progress:100,businesses_found:rows.length,completed_at:new Date().toISOString()}).eq('id',job.id).eq('user_id',input.userId)
-    await supabase.from('search_projects').update({status:'completed'}).eq('id',project.id).eq('user_id',input.userId)
-    return {searchedCount:response.results.length as number,candidateCount:candidates.length,savedCount:rows.length,duplicateCount:candidates.length-rows.length,query:response.query as string,searchedAt:response.searchedAt as string}
-  } catch(error) {
-    const message=error instanceof Error?error.message:'Business discovery failed.'
-    await supabase.from('search_jobs').update({status:'failed',error_message:message.slice(0,500)}).eq('id',job.id).eq('user_id',input.userId)
-    await supabase.from('search_projects').update({status:'failed'}).eq('id',project.id).eq('user_id',input.userId)
-    throw error
+export type DiscoveryCallbacks={onJobCreated?:(id:string)=>void;onProgress?:(progress:number)=>void}
+const businessQueries=(skill:string,market:string)=>[
+ `companies and businesses offering ${skill} services, official websites and service providers in ${market}`,
+ `businesses that may need ${skill} services, website redesign, automation or professional support in ${market}`,
+ `agencies, companies and small businesses hiring or outsourcing ${skill} freelancers in ${market}`,
+ `official company websites and business directories for ${skill} providers in ${market}`,
+ `businesses with poor websites or digital presence that could benefit from ${skill} in ${market}`
+]
+async function waitForJob(userId:string,jobId:string){
+ if(!supabase)throw new Error('Database connection is not configured.')
+ while(true){
+  const{data,error}=await supabase.from('search_jobs').select('status').eq('id',jobId).eq('user_id',userId).single()
+  if(error)throw error
+  if(data.status==='cancelled')throw new Error('Search cancelled. Results saved before cancellation remain in your workspace.')
+  if(data.status==='paused'){await new Promise(resolve=>setTimeout(resolve,1200));continue}
+  if(data.status!=='running')throw new Error('Search job is no longer running.')
+  return
+ }
+}
+export async function discoverBusinesses(input:{userId:string;skill:string;market:string;maxResults?:number}&DiscoveryCallbacks){
+ if(!supabase)throw new Error('Database connection is not configured.')
+ const skill=input.skill.trim(),market=input.market.trim(),maxResults=Math.min(100,Math.max(20,Math.floor(input.maxResults??20)))
+ if(skill.length<2||market.length<2)throw new Error('Enter a valid service and target market.')
+ const worldwide=market.toLowerCase()==='worldwide',querySet=businessQueries(skill,market).slice(0,Math.ceil(maxResults/20))
+ const{data:project,error:projectError}=await supabase.from('search_projects').insert({user_id:input.userId,name:skill+' — '+market,target_scope:worldwide?'worldwide':'country',target_country:worldwide?null:market,source_mode:'businesses',status:'running',preferences:{skill,market,discovery:'businesses',resultLimit:maxResults,querySet}}).select('id').single()
+ if(projectError)throw projectError
+ const{data:job,error:jobError}=await supabase.from('search_jobs').insert({user_id:input.userId,project_id:project.id,status:'running',progress:2,started_at:new Date().toISOString()}).select('id').single()
+ if(jobError){await supabase.from('search_projects').update({status:'failed'}).eq('id',project.id).eq('user_id',input.userId);throw jobError}
+ input.onJobCreated?.(job.id)
+ let searchedCount=0,candidateCount=0,savedCount=0,duplicateCount=0
+ const seen=new Set<string>()
+ try{
+  const{data:existing,error:existingError}=await supabase.from('business_leads').select('source_url').eq('user_id',input.userId)
+  if(existingError)throw existingError
+  for(const row of existing??[])if(row.source_url)seen.add(row.source_url)
+  let partialError=''
+  for(let i=0;i<querySet.length;i++){
+   await waitForJob(input.userId,job.id)
+   const query=querySet[i]
+   const{data:response,error:searchError}=await supabase.functions.invoke('lead-discovery',{body:{query,maxResults:Math.min(20,maxResults-i*20),searchDepth:'basic'}})
+   if(searchError){
+    let message=searchError.message||'The public search provider failed.'
+    const context=(searchError as{context?:unknown}).context
+    if(context&&typeof context==='object'&&'json'in context&&typeof(context as Response).json==='function'){try{const payload=await(context as Response).json();if(typeof payload?.error==='string')message=payload.error}catch{/* keep safe message */}}
+    if(searchedCount>0){partialError=message;break}
+    throw new Error(message)
+   }
+   if(!response||response.status!=='ok'||!Array.isArray(response.results))throw new Error(response?.error||'The search response was invalid.')
+   searchedCount+=response.results.length
+   const candidates=response.results.filter((item:{title?:unknown;url?:unknown})=>typeof item.title==='string'&&item.title.trim().length>1&&typeof item.url==='string'&&/^https?:\/\//i.test(item.url))
+   candidateCount+=candidates.length
+   const fresh=candidates.filter((item:{url:string})=>{if(seen.has(item.url))return false;seen.add(item.url);return true})
+   duplicateCount+=candidates.length-fresh.length
+   const rows=fresh.map((item:{title:string;url:string})=>({user_id:input.userId,project_id:project.id,search_job_id:job.id,business_name:item.title.trim().slice(0,240),website_url:item.url,category:skill,source_name:'Tavily public web index',source_url:item.url,lead_score:0,score_reason:'Not scored yet. Requires verification and evidence review.',verification_status:'unverified'}))
+   if(rows.length){const{error}=await supabase.from('business_leads').insert(rows);if(error)throw error;savedCount+=rows.length}
+   const progress=Math.min(90,Math.round(((i+1)/querySet.length)*90))
+   const{error:progressError}=await supabase.from('search_jobs').update({progress,businesses_found:savedCount}).eq('id',job.id).eq('user_id',input.userId)
+   if(progressError)throw progressError
+   input.onProgress?.(progress)
   }
+  await waitForJob(input.userId,job.id)
+  const finalStatus=partialError?'completed':'completed'
+  await supabase.from('search_jobs').update({status:finalStatus,progress:100,businesses_found:savedCount,error_message:partialError?'Partial results: '+partialError:null,completed_at:new Date().toISOString()}).eq('id',job.id).eq('user_id',input.userId)
+  await supabase.from('search_projects').update({status:'completed'}).eq('id',project.id).eq('user_id',input.userId)
+  input.onProgress?.(100)
+  return{searchedCount,candidateCount,savedCount,duplicateCount,queries:querySet,partial:Boolean(partialError),partialError}
+ }catch(error){
+  const message=error instanceof Error?error.message:'Business discovery failed.'
+  const cancelled=message.startsWith('Search cancelled.')
+  await supabase.from('search_jobs').update({status:cancelled?'cancelled':'failed',error_message:message.slice(0,500),completed_at:new Date().toISOString()}).eq('id',job.id).eq('user_id',input.userId)
+  await supabase.from('search_projects').update({status:cancelled?'cancelled':'failed'}).eq('id',project.id).eq('user_id',input.userId)
+  throw error
+ }
 }
 export type BusinessAnalysis={status:'ok';leadId:string;model:string;score:number;scoreParts:Record<string,number>;websiteQuality:string;identifiedGaps:string[];recommendedService:string|null;evidenceSummary:string;evidenceCount:number;evidence:{title:string;url:string}[];verificationStatus:string;analyzedAt:string}
 export async function enrichBusinessLead(businessLeadId:string):Promise<BusinessAnalysis>{
