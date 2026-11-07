@@ -117,7 +117,7 @@ export async function enrichBusinessLead(businessLeadId:string):Promise<Business
   .eq('business_lead_id',businessLeadId).eq('user_id',lead.user_id)
  if(oldError)throw new Error('Analysis saved, but evidence could not be checked: '+oldError.message)
  const known=new Set((oldEvidence??[]).map(row=>row.evidence_url).filter(Boolean))
- const evidenceRows=result.evidence.filter(item=>typeof item.url==='string'&&/^https?:\\/\\//i.test(item.url)&&!known.has(item.url))
+ const evidenceRows=result.evidence.filter(item=>typeof item.url==='string'&&(item.url.startsWith('https://')||item.url.startsWith('http://'))&&!known.has(item.url))
   .map(item=>({user_id:lead.user_id,business_lead_id:businessLeadId,evidence_type:item.source||'public_web_evidence',
    description:(item.title+': '+(item.content||result.evidenceSummary)).slice(0,1200),evidence_url:item.url,observed_at:now}))
  if(evidenceRows.length){
