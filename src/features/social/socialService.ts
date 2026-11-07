@@ -1,4 +1,5 @@
 import {supabase} from '../../lib/supabase'
+import {buildSocialQueryBatch,SOCIAL_QUERY_TEMPLATE_CAPACITY} from '../discovery/queryTemplateEngine'
 export type SocialOpportunity={id:string;platform:string;post_url:string;author_name:string|null;post_text:string;posted_at:string|null;country:string|null;city:string|null;requested_service:string|null;budget_text:string|null;urgency:string;buying_intent:string|null;lead_score:number;score_reason:string|null;verification_status:string;created_at:string}
 const platformFor=(url:string)=>{const host=new URL(url).hostname.toLowerCase().replace(/^www\./,'');if(host.includes('linkedin.com'))return 'LinkedIn';if(host.includes('facebook.com')||host==='fb.com')return 'Facebook';if(host==='x.com'||host.includes('twitter.com'))return 'X';if(host.includes('threads.net'))return 'Threads';return 'Public community'}
 export async function loadSocialOpportunities(userId:string):Promise<SocialOpportunity[]>{
@@ -7,13 +8,6 @@ export async function loadSocialOpportunities(userId:string):Promise<SocialOppor
  if(error)throw error
  return (data??[]) as SocialOpportunity[]
 }
-const socialQueries=(skill:string,market:string)=>[
- `public social posts asking for a ${skill} freelancer or agency in ${market}`,
- `public hiring requests and project requests for ${skill} services in ${market}`,
- `people or businesses seeking help with ${skill}, looking for recommendations or providers in ${market}`,
- `public LinkedIn Facebook and X posts requesting ${skill} work, quotes or proposals in ${market}`,
- `businesses looking to outsource ${skill} services or hire a ${skill} specialist in ${market}`
-]
 async function waitForSocialJob(userId:string,jobId:string){
  if(!supabase)throw new Error('Database connection is not configured.')
  while(true){
@@ -25,12 +19,12 @@ async function waitForSocialJob(userId:string,jobId:string){
   return
  }
 }
-export async function discoverSocialOpportunities(input:{userId:string;skill:string;market:string;maxResults?:number;onJobCreated?:(id:string)=>void;onProgress?:(progress:number)=>void}){
+export async function discoverSocialOpportunities(input:{userId:string;skill:string;country:string;city?:string;maxResults?:number;onJobCreated?:(id:string)=>void;onProgress?:(progress:number)=>void}){
  if(!supabase)throw new Error('Database connection is not configured.')
- const skill=input.skill.trim(),market=input.market.trim(),maxResults=Math.min(100,Math.max(20,Math.floor(input.maxResults??20)))
- if(skill.length<2||market.length<2)throw new Error('Enter a valid service and target market.')
- const worldwide=market.toLowerCase()==='worldwide',querySet=socialQueries(skill,market).slice(0,Math.ceil(maxResults/20))
- const{data:project,error:projectError}=await supabase.from('search_projects').insert({user_id:input.userId,name:skill+' social demand — '+market,target_scope:worldwide?'worldwide':'country',target_country:worldwide?null:market,source_mode:'social',status:'running',preferences:{skill,market,discovery:'public-social-opportunities',resultLimit:maxResults,querySet}}).select('id').single()
+ const skill=input.skill.trim(),country=input.country.trim(),city=(input.city??'').trim(),market=city?city+', '+country:country,maxResults=Math.min(100,Math.max(20,Math.floor(input.maxResults??20)))
+ if(skill.length<2||country.length<2)throw new Error('Enter a valid service and country.')
+ const querySet=buildSocialQueryBatch(skill,country,city,Math.min(8,Math.max(5,Math.ceil(maxResults/12))))
+ const{data:project,error:projectError}=await supabase.from('search_projects').insert({user_id:input.userId,name:skill+' social demand — '+market,target_scope:city?'city':'country',target_country:country,target_city:city||null,source_mode:'social',status:'running',preferences:{skill,country,city:city||null,market,discovery:'public-social-opportunities',resultLimit:maxResults,querySet,templateLibrarySize:SOCIAL_QUERY_TEMPLATE_CAPACITY}}).select('id').single()
  if(projectError)throw projectError
  const{data:job,error:jobError}=await supabase.from('search_jobs').insert({user_id:input.userId,project_id:project.id,status:'running',progress:2,started_at:new Date().toISOString()}).select('id').single()
  if(jobError){await supabase.from('search_projects').update({status:'failed'}).eq('id',project.id).eq('user_id',input.userId);throw jobError}
@@ -81,7 +75,7 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
   await supabase.from('search_jobs').update({status:'completed',progress:100,opportunities_found:savedCount,error_message:partialError?'Partial results: '+partialError:null,completed_at:new Date().toISOString()}).eq('id',job.id).eq('user_id',input.userId)
   await supabase.from('search_projects').update({status:'completed'}).eq('id',project.id).eq('user_id',input.userId)
   input.onProgress?.(100)
-  return{searchedCount,candidateCount,savedCount,duplicateCount,queries:querySet,partial:Boolean(partialError),partialError}
+  return{searchedCount,candidateCount,savedCount,duplicateCount,queries:querySet,partial:Boolean(partialError),partialError,templateLibrarySize:SOCIAL_QUERY_TEMPLATE_CAPACITY}
  }catch(error){
   const message=error instanceof Error?error.message:'Social opportunity discovery failed.'
   const cancelled=message.startsWith('Search cancelled.')
