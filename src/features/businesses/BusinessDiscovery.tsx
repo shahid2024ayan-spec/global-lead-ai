@@ -3,7 +3,7 @@ import {Building2,ExternalLink,Globe2,LoaderCircle,RefreshCw,Search,ShieldCheck,
 import {discoverBusinesses,loadBusinessLeads,type BusinessLead} from './businessService'
 import {saveBusinessToCrm} from '../crm/crmService'
 import {enrichBusinessLead,loadBusinessEvidence,type LeadEvidence} from './businessService'
-export default function BusinessDiscovery({userId,initialSkill='Web development',initialCountry='Pakistan',initialCity='Sargodha'}:{userId:string;initialSkill?:string;initialCountry?:string;initialCity?:string}) {
+export default function BusinessDiscovery({userId,initialSkill='Web development',initialCountry='Pakistan',initialCity=''}:{userId:string;initialSkill?:string;initialCountry?:string;initialCity?:string}) {
  const [skill,setSkill]=useState(initialSkill),[country,setCountry]=useState(initialCountry),[city,setCity]=useState(initialCity),[leads,setLeads]=useState<BusinessLead[]>([]),[resultLimit,setResultLimit]=useState(100)
  const [loading,setLoading]=useState(false),[refreshing,setRefreshing]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState(''),[savingLead,setSavingLead]=useState(''),[analyzing,setAnalyzing]=useState(''),[evidenceByLead,setEvidenceByLead]=useState<Record<string,LeadEvidence[]>>({}),[evidenceOpen,setEvidenceOpen]=useState(''),[evidenceLoading,setEvidenceLoading]=useState(''),[batchAnalyzing,setBatchAnalyzing]=useState(false),[batchProgress,setBatchProgress]=useState({done:0,total:0})
  const refresh=async()=>{setRefreshing(true);try{setLeads(await loadBusinessLeads(userId))}catch(reason){setError(reason instanceof Error?reason.message:'Could not load saved candidates.')}finally{setRefreshing(false)}}
@@ -16,7 +16,7 @@ export default function BusinessDiscovery({userId,initialSkill='Web development'
   let completed=0,failed=0,quotaMessage=''
   for(const lead of pending){
    try{await enrichBusinessLead(lead.id);completed++}
-   catch(reason){failed++;const message=reason instanceof Error?reason.message:'Analysis failed';if(/429|quota|resource[_ ]exhausted|rate.?limit|503/i.test(message)){quotaMessage=message;break}}
+   catch(reason){failed++;const message=reason instanceof Error?reason.message:'Analysis failed';if(/429|quota|resource[_ ]exhausted|rate.?limit|503/i.test(message)){quotaMessage=message;setBatchProgress({done:completed+failed,total:pending.length});break}}
    setBatchProgress({done:completed+failed,total:pending.length})
   }
   await refresh()
