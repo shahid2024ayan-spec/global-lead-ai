@@ -9,7 +9,7 @@ export default function SocialDiscovery({userId}:{userId:string}){
  const [country,setCountry]=useState('Pakistan')
  const [city,setCity]=useState('Sargodha')
  const [items,setItems]=useState<SocialOpportunity[]>([])
- const [resultLimit,setResultLimit]=useState(20)
+ const [resultLimit,setResultLimit]=useState(100)
  const [activeJobId,setActiveJobId]=useState('')
  const [jobProgress,setJobProgress]=useState(0)
  const [jobPaused,setJobPaused]=useState(false)
