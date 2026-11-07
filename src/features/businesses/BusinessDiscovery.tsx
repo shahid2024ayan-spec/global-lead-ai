@@ -9,7 +9,22 @@ export default function BusinessDiscovery({userId,initialSkill='Web development'
  const refresh=async()=>{setRefreshing(true);try{setLeads(await loadBusinessLeads(userId))}catch(reason){setError(reason instanceof Error?reason.message:'Could not load saved candidates.')}finally{setRefreshing(false)}}
  useEffect(()=>{void refresh()},[userId])
  const analyze=async(id:string)=>{setAnalyzing(id);setError('');setNotice('');try{const result=await enrichBusinessLead(id);setNotice('AI analysis saved. Business need: '+result.needScore+'/100; skill fit: '+result.fitScore+'/100; confidence: '+Math.round(result.confidence*100)+'%; level: '+result.needLevel.replaceAll('_',' ')+'. Evidence sources: '+result.evidenceCount+'.');await refresh()}catch(e){setError(e instanceof Error?e.message:'Could not analyze business.')}finally{setAnalyzing('')}}
- const analyzeNextBatch=async()=>{\n  const pending=leads.filter(lead=>!lead.website_audit?.aiAnalysis).slice(0,5)\n  if(!pending.length){setNotice('All saved candidates already have an AI assessment.');return}\n  setBatchAnalyzing(true);setBatchProgress({done:0,total:pending.length});setError('');setNotice('')\n  let completed=0,failed=0,quotaMessage=''\n  for(const lead of pending){\n   try{await enrichBusinessLead(lead.id);completed++}\n   catch(reason){failed++;const message=reason instanceof Error?reason.message:'Analysis failed';if(/429|quota|resource[_ ]exhausted|rate.?limit|503/i.test(message)){quotaMessage=message;break}}\n   setBatchProgress({done:completed+failed,total:pending.length})\n  }\n  await refresh()\n  setNotice(`${completed} candidates analyzed; ${failed} failed. ${quotaMessage?'Batch stopped because the AI provider reached a limit.':'Run the next batch to continue.'}`)\n  if(quotaMessage)setError(quotaMessage)\n  setBatchAnalyzing(false)\n }\n const toggleEvidence=async(id:string)=>{if(evidenceOpen===id){setEvidenceOpen('');return}setEvidenceOpen(id);if(evidenceByLead[id])return;setEvidenceLoading(id);try{const rows=await loadBusinessEvidence(id);setEvidenceByLead(prev=>({...prev,[id]:rows}))}catch(e){setError(e instanceof Error?e.message:'Could not load evidence sources.')}finally{setEvidenceLoading('')}}
+ const analyzeNextBatch=async()=>{
+  const pending=leads.filter(lead=>!lead.website_audit?.aiAnalysis).slice(0,5)
+  if(!pending.length){setNotice('All saved candidates already have an AI assessment.');return}
+  setBatchAnalyzing(true);setBatchProgress({done:0,total:pending.length});setError('');setNotice('')
+  let completed=0,failed=0,quotaMessage=''
+  for(const lead of pending){
+   try{await enrichBusinessLead(lead.id);completed++}
+   catch(reason){failed++;const message=reason instanceof Error?reason.message:'Analysis failed';if(/429|quota|resource[_ ]exhausted|rate.?limit|503/i.test(message)){quotaMessage=message;break}}
+   setBatchProgress({done:completed+failed,total:pending.length})
+  }
+  await refresh()
+  setNotice(`${completed} candidates analyzed; ${failed} failed. ${quotaMessage?'Batch stopped because the AI provider reached a limit.':'Run the next batch to continue.'}`)
+  if(quotaMessage)setError(quotaMessage)
+  setBatchAnalyzing(false)
+ }
+ const toggleEvidence=async(id:string)=>{if(evidenceOpen===id){setEvidenceOpen('');return}setEvidenceOpen(id);if(evidenceByLead[id])return;setEvidenceLoading(id);try{const rows=await loadBusinessEvidence(id);setEvidenceByLead(prev=>({...prev,[id]:rows}))}catch(e){setError(e instanceof Error?e.message:'Could not load evidence sources.')}finally{setEvidenceLoading('')}}
  const saveToCRM=async(id:string)=>{setSavingLead(id);setError('');try{const added=await saveBusinessToCrm(userId,id);setNotice(added?'Business candidate added to CRM.':'This candidate is already in your CRM.')}catch(e){setError(e instanceof Error?e.message:'Could not save candidate to CRM.')}finally{setSavingLead('')}}
  const search=async(event:React.FormEvent)=>{event.preventDefault();setLoading(true);setError('');setNotice('');try{const r=await discoverBusinesses({userId,skill,country,city,maxResults:resultLimit});setNotice(r.providerLabel+': '+r.searchedCount+' listings returned; '+r.savedCount+' new businesses saved; '+r.duplicateCount+' duplicates skipped. '+r.providerNote+(r.partial?' Provider note: '+r.partialError:''));await refresh()}catch(reason){setError(reason instanceof Error?reason.message:'Business discovery failed.')}finally{setLoading(false);}}
 
