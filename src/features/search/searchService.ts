@@ -31,3 +31,11 @@ export async function saveSearchSetup({ userId, skill, region, source }: SearchS
   if (skillError) console.error('Skill preference save failed:', skillError.message)
   return data
 }
+
+export async function setSearchJobStatus(userId:string,jobId:string,status:'running'|'paused'|'cancelled'){
+ if(!supabase)throw new Error('Database connection is not configured.')
+ const updates:Record<string,unknown>={status}
+ if(status==='cancelled')updates.completed_at=new Date().toISOString()
+ const{error}=await supabase.from('search_jobs').update(updates).eq('id',jobId).eq('user_id',userId)
+ if(error)throw error
+}
