@@ -65,7 +65,7 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
     const rawHost=parsed.hostname.toLowerCase(),host=rawHost.startsWith('www.')?rawHost.slice(4):rawHost
     const domains=['linkedin.com','facebook.com','fb.com','x.com','twitter.com','threads.net']
     if(!domains.some(domain=>host===domain||host.endsWith('.'+domain)))return[]
-    return[{url:item.url,content:item.content,title:typeof item.title==='string'?item.title:'',publishedDate:typeof item.published_date==='string'?item.published_date:null}]
+    return[{url:item.url,content:item.content,title:typeof item.title==='string'?item.title:'',publishedDate:typeof item.publishedDate==='string'?item.publishedDate:typeof item.published_date==='string'?item.published_date:null}]
    })
    candidateCount+=allowed.length
    const fresh=allowed.filter(item=>{if(seen.has(item.url))return false;seen.add(item.url);return true})
