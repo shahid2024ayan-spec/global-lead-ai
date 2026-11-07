@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from .config import get_settings
 from .providers import search_businesses, search_social
-from .analyzer import analyze_business
+from .analyzer import analyze_business, score_social_opportunity
 
 settings = get_settings()
 app = FastAPI(title="GlobalLead AI Python API", version="1.0.0", description="Free-first discovery and intelligence backend")
@@ -21,6 +21,10 @@ class DiscoveryRequest(BaseModel):
 class AnalyzeRequest(BaseModel):
     skill: str = Field(min_length=2, max_length=100)
     business: dict = Field(default_factory=dict)
+
+class SocialAnalyzeRequest(BaseModel):
+    skill: str = Field(min_length=2, max_length=100)
+    opportunity: dict = Field(default_factory=dict)
 
 async def require_user(authorization: str | None = Header(default=None)):
     if not authorization or not authorization.lower().startswith("bearer "):
@@ -63,3 +67,13 @@ async def analyze(payload: AnalyzeRequest, user=Depends(require_user)):
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Business analysis failed: {type(exc).__name__}. Check API key, model availability and provider limits.")
+
+@app.post("/api/ai/score-social")
+async def score_social(payload: SocialAnalyzeRequest, user=Depends(require_user)):
+    try:
+        result = await __import__("asyncio").to_thread(score_social_opportunity, payload.skill, payload.opportunity)
+        return result
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Social opportunity analysis failed: {type(exc).__name__}. Check API key, model availability and provider limits.")
