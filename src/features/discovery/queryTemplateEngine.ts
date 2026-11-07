@@ -10,7 +10,8 @@ const businessSectors = [
   "restaurants", "cafes", "retail shops", "clothing stores", "medical clinics", "dental practices", "law firms",
   "accounting firms", "real estate agencies", "hotels", "travel agencies", "gyms", "beauty salons", "car dealerships",
   "auto repair shops", "education centers", "private schools", "construction companies", "manufacturers", "wholesalers",
-  "logistics companies", "home service companies", "consultants", "local professional services"
+  "logistics companies", "home service companies", "consultants", "local professional services",
+  "startups", "software companies", "digital agencies", "marketing agencies", "small local companies", "independent businesses"
 ];
 const businessGeoForms = ["in {area}", "near {area}", "serving {area}", "based around {area}", "in the {area} market", "around {area}", "across {area}", "located in {area}", "operating in {area}", "within {area}", "local to {area}", "in and around {area}"];
 const businessQueryForms = ["{intent} among {sector} {geo}", "{sector} {geo} that may need {skill}", "{intent} {geo} for {sector}", "{skill} opportunities: {sector} {geo}", "find prospects: {intent} {sector} {geo}", "{sector} with digital gaps {geo}", "potential {skill} clients: {sector} {geo}", "{sector} businesses with outdated online presence {geo}", "small and independent {sector} {geo}", "official {sector} listings {geo}", "{sector} that could benefit from {skill} {geo}", "business prospects for {skill} in {sector} {geo}"];
