@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { pythonApi } from '../../lib/pythonApi'
 export type BusinessLead = { id:string; business_name:string; website_url:string|null; country:string|null; city:string|null; category:string|null; source_name:string; source_url:string|null; lead_score:number; verification_status:string; created_at:string; website_quality:string|null; identified_gaps:string[]; recommended_service:string|null; score_reason:string|null; last_verified_at:string|null; website_status:string; mobile_responsive:boolean|null; page_load_ms:number|null; seo_issues:string[]; website_audit:Record<string,unknown> }
 export async function loadBusinessLeads(userId:string):Promise<BusinessLead[]> {
   if(!supabase) throw new Error('Database connection is not configured.')
@@ -28,14 +29,8 @@ export async function discoverBusinesses(input:{userId:string;skill:string;count
  input.onJobCreated?.(job.id);input.onProgress?.(8)
  try{
   await waitForJob(input.userId,job.id)
-  const{data:response,error:invokeError}=await supabase.functions.invoke('maps-business-discovery',{body:{skill,country,city:city||null,maxResults}})
-  if(invokeError){
-   let message=invokeError.message||'Business map discovery failed.'
-   const context=(invokeError as{context?:unknown}).context
-   if(context&&typeof context==='object'&&'json'in context&&typeof(context as Response).json==='function'){try{const payload=await(context as Response).json();if(typeof payload?.error==='string')message=payload.error}catch{/* keep safe error */}}
-   throw new Error(message)
-  }
-  if(!response||response.status!=='ok'||!Array.isArray(response.results))throw new Error(response?.error||'The Maps discovery response was invalid.')
+  const response=await pythonApi<{provider:string;providerLabel:string;searchedCount:number;results:Record<string,unknown>[];partial:boolean;partialError:string;queries:string[];providerNote:string}>('/api/discover/businesses',{skill,country,city:city||null,maxResults})
+  if(!response||!Array.isArray(response.results))throw new Error('The Python business discovery response was invalid.')
   input.onProgress?.(65)
   const{data:existing,error:existingError}=await supabase.from('business_leads').select('source_url').eq('user_id',input.userId)
   if(existingError)throw existingError
@@ -60,14 +55,13 @@ export async function discoverBusinesses(input:{userId:string;skill:string;count
   }))
   if(rows.length){const{error}=await supabase.from('business_leads').insert(rows);if(error)throw error}
   input.onProgress?.(88)
-  const providerErrors=Array.isArray(response.providerErrors)?response.providerErrors:[]
-  const partial=providerErrors.length>0
-  const partialError=providerErrors.join(' ')
+  const partial=Boolean(response.partial)
+  const partialError=String(response.partialError??'')
   const{error:jobUpdateError}=await supabase.from('search_jobs').update({status:'completed',progress:100,businesses_found:rows.length,error_message:partial?('Partial provider results: '+partialError).slice(0,500):null,completed_at:new Date().toISOString()}).eq('id',job.id).eq('user_id',input.userId)
   if(jobUpdateError)throw jobUpdateError
   await supabase.from('search_projects').update({status:'completed'}).eq('id',project.id).eq('user_id',input.userId)
   input.onProgress?.(100)
-  return{searchedCount:Number(response.resultCount??candidates.length),candidateCount:candidates.length,savedCount:rows.length,duplicateCount,queries:Array.isArray(response.queries)?response.queries:[],partial,partialError,provider:String(response.provider??'unknown'),providerLabel:String(response.providerLabel??'Business map provider'),providerNote:String(response.note??'')}
+  return{searchedCount:Number(response.searchedCount??candidates.length),candidateCount:candidates.length,savedCount:rows.length,duplicateCount,queries:Array.isArray(response.queries)?response.queries:[],partial,partialError,provider:String(response.provider??'unknown'),providerLabel:String(response.providerLabel??'Business map provider'),providerNote:String(response.providerNote??'')}
  }catch(error){
   const message=error instanceof Error?error.message:'Business discovery failed.'
   const cancelled=message.startsWith('Search cancelled.')
