@@ -1,5 +1,5 @@
 import {supabase} from '../../lib/supabase'
-import {buildSocialQueryBatch,SOCIAL_QUERY_TEMPLATE_CAPACITY} from '../discovery/queryTemplateEngine'
+export const SOCIAL_QUERY_TEMPLATE_CAPACITY=122880
 export type SocialOpportunity={id:string;platform:string;post_url:string;author_name:string|null;post_text:string;posted_at:string|null;country:string|null;city:string|null;requested_service:string|null;budget_text:string|null;urgency:string;buying_intent:string|null;lead_score:number;score_reason:string|null;verification_status:string;created_at:string}
 const platformFor=(url:string)=>{const host=new URL(url).hostname.toLowerCase().replace(/^www\./,'');if(host.includes('linkedin.com'))return 'LinkedIn';if(host.includes('facebook.com')||host==='fb.com')return 'Facebook';if(host==='x.com'||host.includes('twitter.com'))return 'X';if(host.includes('threads.net'))return 'Threads';return 'Public community'}
 export async function loadSocialOpportunities(userId:string):Promise<SocialOpportunity[]>{
@@ -23,9 +23,13 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
  if(!supabase)throw new Error('Database connection is not configured.')
  const skill=input.skill.trim(),country=input.country.trim(),city=(input.city??'').trim(),market=city?city+', '+country:country,maxResults=Math.min(100,Math.max(20,Math.floor(input.maxResults??20)))
  if(skill.length<2||country.length<2)throw new Error('Enter a valid service and country.')
- const querySet=buildSocialQueryBatch(skill,country,city,Math.min(8,Math.max(5,Math.ceil(maxResults/12))))
+ const {data:queryPlan,error:planError}=await supabase.functions.invoke('social-query-plan',{body:{skill,country,city:city||null,maxResults}})
+ if(planError)throw new Error(planError.message||'Could not prepare the social search query plan.')
+ if(!queryPlan||queryPlan.status!=='ok'||!Array.isArray(queryPlan.queries))throw new Error(queryPlan?.error||'The social query plan was invalid.')
+ const querySet=queryPlan.queries as string[]
+ const templateLibrarySize=Number(queryPlan.templateLibrarySize)||SOCIAL_QUERY_TEMPLATE_CAPACITY
  const perQueryLimit=Math.min(20,Math.ceil(maxResults/querySet.length))
- const{data:project,error:projectError}=await supabase.from('search_projects').insert({user_id:input.userId,name:skill+' social demand — '+market,target_scope:city?'city':'country',target_country:country,target_city:city||null,source_mode:'social',status:'running',preferences:{skill,country,city:city||null,market,discovery:'public-social-opportunities',resultLimit:maxResults,querySet,templateLibrarySize:SOCIAL_QUERY_TEMPLATE_CAPACITY}}).select('id').single()
+ const{data:project,error:projectError}=await supabase.from('search_projects').insert({user_id:input.userId,name:skill+' social demand — '+market,target_scope:city?'city':'country',target_country:country,target_city:city||null,source_mode:'social',status:'running',preferences:{skill,country,city:city||null,market,discovery:'public-social-opportunities',resultLimit:maxResults,querySet,templateLibrarySize}}).select('id').single()
  if(projectError)throw projectError
  const{data:job,error:jobError}=await supabase.from('search_jobs').insert({user_id:input.userId,project_id:project.id,status:'running',progress:2,started_at:new Date().toISOString()}).select('id').single()
  if(jobError){await supabase.from('search_projects').update({status:'failed'}).eq('id',project.id).eq('user_id',input.userId);throw jobError}
@@ -77,7 +81,7 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
   await supabase.from('search_jobs').update({status:'completed',progress:100,opportunities_found:savedCount,error_message:partialError?'Partial results: '+partialError:null,completed_at:new Date().toISOString()}).eq('id',job.id).eq('user_id',input.userId)
   await supabase.from('search_projects').update({status:'completed'}).eq('id',project.id).eq('user_id',input.userId)
   input.onProgress?.(100)
-  return{searchedCount,candidateCount,savedCount,duplicateCount,queries:querySet,partial:Boolean(partialError),partialError,templateLibrarySize:SOCIAL_QUERY_TEMPLATE_CAPACITY}
+  return{searchedCount,candidateCount,savedCount,duplicateCount,queries:querySet,partial:Boolean(partialError),partialError,templateLibrarySize}
  }catch(error){
   const message=error instanceof Error?error.message:'Social opportunity discovery failed.'
   const cancelled=message.startsWith('Search cancelled.')
