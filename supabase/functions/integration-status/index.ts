@@ -9,105 +9,71 @@ const corsHeaders = {
 
 const providers = [
   {
-    id: "google_places",
-    name: "Google Places",
-    category: "Business discovery",
-    env: "GOOGLE_MAPS_API_KEY",
-    description: "Business names, locations, websites, phone numbers and place details.",
-    setup: "Create a Google Maps Platform API key and enable Places API (New). Restrict the key to the required API.",
-    docs: "https://developers.google.com/maps/documentation/places/web-service/overview",
-  },
-  {
-    id: "serpapi",
-    name: "SerpApi",
-    category: "Search discovery",
-    env: "SERPAPI_API_KEY",
-    description: "Search engine and Google Maps result discovery through a provider API.",
-    setup: "Create a SerpApi account and add its API key to Supabase Edge Function secrets.",
-    docs: "https://serpapi.com/",
-  },
-  {
     id: "tavily",
-    name: "Tavily",
-    category: "Web intelligence",
+    name: "Tavily Search",
+    category: "Web & public opportunity discovery",
     env: "TAVILY_API_KEY",
-    description: "Web search and extraction for publicly available business and opportunity pages.",
-    setup: "Create a Tavily API key and add it to Supabase Edge Function secrets.",
+    description: "Searches publicly indexed business websites and public opportunity pages. It does not provide private or complete access to social networks.",
+    setup: "Add TAVILY_API_KEY under Supabase Edge Function secrets.",
     docs: "https://docs.tavily.com/",
   },
   {
-    id: "reddit",
-    name: "Reddit API",
-    category: "Public social opportunities",
-    env: "REDDIT_CLIENT_ID",
-    secondaryEnv: "REDDIT_CLIENT_SECRET",
-    description: "Search public Reddit posts using authorized API access and applicable platform rules.",
-    setup: "Register a Reddit API application and store both client ID and secret in Supabase Edge Function secrets.",
-    docs: "https://www.reddit.com/dev/api/",
+    id: "google_places",
+    name: "Google Maps / Places",
+    category: "Maps-first business discovery",
+    env: "GOOGLE_MAPS_API_KEY",
+    description: "Finds real business listings, addresses and Google Maps links. Website and contact enrichment runs separately. Uses OpenStreetMap as a free fallback when not configured.",
+    setup: "Optional: add GOOGLE_MAPS_API_KEY under Supabase Edge Function secrets. Keep it server-side, restrict the key to Places API (New), and enable Google Cloud billing. Google Maps is pay-as-you-go; without this key, city searches use free OpenStreetMap.",
+    docs: "https://developers.google.com/maps/documentation/places/web-service",
+  },
+  {
+    id: "gemini",
+    name: "Google Gemini",
+    category: "AI analysis",
+    env: "GEMINI_API_KEY",
+    description: "Powers AI lead analysis, qualification, scoring and outreach drafting.",
+    setup: "Add GEMINI_API_KEY under Supabase Edge Function secrets.",
+    docs: "https://ai.google.dev/gemini-api/docs",
   },
 ] as const;
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+  if (req.method !== "GET") return json({ error: "Method not allowed" }, 405);
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(JSON.stringify({ error: "Authentication required" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
+  if (!authHeader?.startsWith("Bearer ")) return json({ error: "Authentication required" }, 401);
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!supabaseUrl || !anonKey) {
-    return new Response(JSON.stringify({ error: "Backend auth configuration is incomplete" }), {
-      status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (!supabaseUrl || !anonKey) return json({ error: "Backend auth configuration is incomplete" }, 503);
 
-  const authClient = createClient(supabaseUrl, anonKey, {
+  const client = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data, error } = await authClient.auth.getUser();
-  if (error || !data.user) {
-    return new Response(JSON.stringify({ error: "Invalid or expired session" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  const { data, error } = await client.auth.getUser();
+  if (error || !data.user) return json({ error: "Invalid or expired session" }, 401);
 
-  const result = providers.map((provider) => {
-    const primaryConfigured = Boolean(Deno.env.get(provider.env));
-    const secondaryConfigured = "secondaryEnv" in provider
-      ? Boolean(Deno.env.get(provider.secondaryEnv))
-      : true;
-    return {
-      id: provider.id,
-      name: provider.name,
-      category: provider.category,
-      description: provider.description,
-      setup: provider.setup,
-      docs: provider.docs,
-      configured: primaryConfigured && secondaryConfigured,
-      missingCredentials: [
-        ...(!primaryConfigured ? [provider.env] : []),
-        ...(!secondaryConfigured && "secondaryEnv" in provider ? [provider.secondaryEnv] : []),
-      ],
-    };
-  });
+  const result = providers.map((provider) => ({
+    id: provider.id,
+    name: provider.name,
+    category: provider.category,
+    description: provider.description,
+    setup: provider.setup,
+    docs: provider.docs,
+    configured: Boolean(Deno.env.get(provider.env)),
+    missingCredentials: Deno.env.get(provider.env) ? [] : [provider.env],
+  }));
 
-  return new Response(JSON.stringify({
+  return json({
     status: "ok",
     checkedAt: new Date().toISOString(),
     providers: result,
     configuredCount: result.filter((item) => item.configured).length,
     totalProviders: result.length,
-  }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 });
