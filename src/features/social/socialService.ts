@@ -72,8 +72,31 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
 }
 export async function scoreSocialOpportunity(socialOpportunityId:string){
  if(!supabase)throw new Error('Database connection is not configured.')
- const {data,error}=await supabase.functions.invoke('social-opportunity-score',{body:{socialOpportunityId}})
- if(error){let message=error.message||'Could not score this opportunity.';const context=(error as {context?:unknown}).context;if(context&&typeof context==='object'&&'json' in context&&typeof(context as Response).json==='function'){try{const p=await(context as Response).json();if(typeof p?.error==='string')message=p.error}catch{/* keep safe error */}}throw new Error(message)}
- if(!data||data.status!=='ok')throw new Error(data?.error||'Scoring response was invalid.')
- return data as {status:'ok';score:number;scoreParts:Record<string,number>;explicitBuyingIntent:boolean;urgency:string;budgetText:string|null;scoreReason:string;postedDaysAgo:number|null}
+ const {data:item,error}=await supabase.from('social_opportunities')
+  .select('id,user_id,project_id,platform,post_url,author_name,post_text,posted_at,country,city,requested_service')
+  .eq('id',socialOpportunityId).single()
+ if(error||!item)throw new Error(error?.message||'Social opportunity not found.')
+ let skill=String(item.requested_service||'').trim()||'web development'
+ if(item.project_id){
+  const {data:project}=await supabase.from('search_projects').select('preferences')
+   .eq('id',item.project_id).eq('user_id',item.user_id).maybeSingle()
+  const preferences=project?.preferences as Record<string,unknown>|null
+  if(typeof preferences?.skill==='string'&&preferences.skill.trim())skill=preferences.skill.trim()
+ }
+ const result=await pythonApi<{
+  status:'ok';score:number;scoreParts:Record<string,number>;explicitBuyingIntent:boolean;
+  buyingIntent:string;urgency:string;budgetText:string|null;scoreReason:string;
+  evidenceQuotes:string[];postedDaysAgo:number|null
+ }>('/api/ai/score-social',{skill,opportunity:{
+  platform:item.platform,post_url:item.post_url,author_name:item.author_name,
+  post_text:item.post_text,posted_at:item.posted_at,country:item.country,city:item.city
+ }})
+ if(!result||result.status!=='ok')throw new Error('Python social analysis returned an invalid response.')
+ const {error:updateError}=await supabase.from('social_opportunities').update({
+  lead_score:result.score,buying_intent:result.buyingIntent,urgency:result.urgency,
+  budget_text:result.budgetText,score_reason:result.scoreReason
+ }).eq('id',socialOpportunityId).eq('user_id',item.user_id)
+ if(updateError)throw new Error('AI analysis completed but could not be saved: '+updateError.message)
+ const postedDaysAgo=item.posted_at?Math.max(0,Math.floor((Date.now()-new Date(item.posted_at).getTime())/86400000)):null
+ return {...result,postedDaysAgo}
 }
