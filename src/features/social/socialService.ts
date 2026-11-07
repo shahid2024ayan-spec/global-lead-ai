@@ -24,6 +24,7 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
  const skill=input.skill.trim(),country=input.country.trim(),city=(input.city??'').trim(),market=city?city+', '+country:country,maxResults=Math.min(100,Math.max(20,Math.floor(input.maxResults??20)))
  if(skill.length<2||country.length<2)throw new Error('Enter a valid service and country.')
  const querySet=buildSocialQueryBatch(skill,country,city,Math.min(8,Math.max(5,Math.ceil(maxResults/12))))
+ const perQueryLimit=Math.min(20,Math.ceil(maxResults/querySet.length))
  const{data:project,error:projectError}=await supabase.from('search_projects').insert({user_id:input.userId,name:skill+' social demand — '+market,target_scope:city?'city':'country',target_country:country,target_city:city||null,source_mode:'social',status:'running',preferences:{skill,country,city:city||null,market,discovery:'public-social-opportunities',resultLimit:maxResults,querySet,templateLibrarySize:SOCIAL_QUERY_TEMPLATE_CAPACITY}}).select('id').single()
  if(projectError)throw projectError
  const{data:job,error:jobError}=await supabase.from('search_jobs').insert({user_id:input.userId,project_id:project.id,status:'running',progress:2,started_at:new Date().toISOString()}).select('id').single()
@@ -39,7 +40,7 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
   for(let i=0;i<querySet.length;i++){
    await waitForSocialJob(input.userId,job.id)
    const query=querySet[i]
-   const{data:response,error:searchError}=await supabase.functions.invoke('lead-discovery',{body:{query,maxResults:Math.min(20,maxResults-i*20),searchDepth:'basic'}})
+   const{data:response,error:searchError}=await supabase.functions.invoke('lead-discovery',{body:{query,maxResults:perQueryLimit,searchDepth:'basic'}})
    if(searchError){
     let message=searchError.message||'The public search provider failed.'
     const context=(searchError as{context?:unknown}).context
