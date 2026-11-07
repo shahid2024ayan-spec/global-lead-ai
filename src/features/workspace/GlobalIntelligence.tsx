@@ -1,5 +1,5 @@
 import{useEffect,useState}from'react'
-import{Globe2,BarChart3,Building2,MessagesSquare,ShieldCheck,RefreshCw,LoaderCircle,CircleAlert,MapPin,Tags,Database,Search,Clock3}from'lucide-react'
+import{Globe2,BarChart3,Building2,MessagesSquare,ShieldCheck,RefreshCw,LoaderCircle,CircleAlert,MapPin,Tags,Database,Search}from'lucide-react'
 import SkillIntelligence from'../integrations/SkillIntelligence'
 import{loadGlobalIntelligence,loadRecentSearchJobs,type GlobalIntelligenceData,type RecentSearchJob}from'./workspaceService'
 export default function GlobalIntelligence({userId}:{userId:string}){
