@@ -106,9 +106,9 @@ export async function enrichBusinessLead(businessLeadId:string):Promise<Business
  const {error:saveError}=await supabase.from('business_leads').update({
   website_quality:result.websiteQuality,identified_gaps:result.identifiedGaps,
   recommended_service:result.recommendedService,lead_score:result.score,score_reason:scoreReason,
-  verification_status:result.verificationStatus,last_verified_at:result.evidenceCount||audit.htmlChecked?now:null,
+  verification_status:result.verificationStatus,last_verified_at:(result.evidenceCount>0||Boolean(audit.htmlChecked))?now:null,
   website_status:typeof audit.status==='string'?audit.status:'unknown',
-  website_audit:audit,mobile_responsive:typeof audit.mobileResponsive==='boolean'?audit.mobileResponsive:null,
+  website_audit:{...audit,aiAnalysis:{needScore:result.needScore,fitScore:result.fitScore,confidence:result.confidence,needLevel:result.needLevel,needReasons:result.needReasons}},mobile_responsive:typeof audit.mobileResponsive==='boolean'?audit.mobileResponsive:null,
   page_load_ms:typeof audit.pageLoadMs==='number'?audit.pageLoadMs:null,
   seo_issues:Array.isArray(audit.seoIssues)?audit.seoIssues:[],website_audited_at:now
  }).eq('id',businessLeadId).eq('user_id',lead.user_id)
