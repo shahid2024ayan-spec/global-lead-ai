@@ -14,3 +14,17 @@ const businessSectors = [
 ];
 const businessGeoForms = ["in {area}", "near {area}", "serving {area}", "based around {area}", "in the {area} market", "around {area}", "across {area}", "located in {area}", "operating in {area}", "within {area}", "local to {area}", "in and around {area}"];
 const businessQueryForms = ["{intent} among {sector} {geo}", "{sector} {geo} that may need {skill}", "{intent} {geo} for {sector}", "{skill} opportunities: {sector} {geo}", "find prospects: {intent} {sector} {geo}", "{sector} with digital gaps {geo}", "potential {skill} clients: {sector} {geo}", "{sector} businesses with outdated online presence {geo}", "small and independent {sector} {geo}", "official {sector} listings {geo}", "{sector} that could benefit from {skill} {geo}", "business prospects for {skill} in {sector} {geo}"];
+
+export const BUSINESS_QUERY_TEMPLATE_CAPACITY=businessIntents.length*businessSectors.length*businessGeoForms.length*businessQueryForms.length;
+function render(template:string,values:Record<string,string>){
+ return template.replace(/\{(intent|sector|geo|skill)\}/g,(_,key:string)=>values[key]??"");
+}
+export function buildBusinessQueryBatch(skill:string,country:string,city="",limit=5){
+ const area=city?city+", "+country:country;
+ return businessQueryForms.slice(0,Math.max(1,Math.min(limit,businessQueryForms.length))).map((template,index)=>render(template,{
+  intent:businessIntents[(index*3)%businessIntents.length],
+  sector:businessSectors[(index*5)%businessSectors.length],
+  geo:businessGeoForms[(index*2)%businessGeoForms.length].replaceAll("{area}",area),
+  skill
+ }));
+}
