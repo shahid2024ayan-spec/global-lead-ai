@@ -55,7 +55,7 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
    }
    if(!response||response.status!=='ok'||!Array.isArray(response.results))throw new Error(response?.error||'The search response was invalid.')
    searchedCount+=response.results.length
-   const allowed=response.results.flatMap((raw:unknown)=>{
+   const allowed:{url:string;content:string;title:string;publishedDate:string|null}[]=response.results.flatMap((raw:unknown)=>{
     if(!raw||typeof raw!=='object')return[]
     const item=raw as Record<string,unknown>
     if(typeof item.url!=='string'||typeof item.content!=='string'||item.content.trim().length<30)return[]
