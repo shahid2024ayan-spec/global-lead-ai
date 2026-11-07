@@ -1,8 +1,8 @@
 import { supabase } from '../../lib/supabase'
-export type BusinessLead = { id:string; business_name:string; website_url:string|null; country:string|null; city:string|null; category:string|null; source_name:string; source_url:string|null; lead_score:number; verification_status:string; created_at:string; website_quality:string|null; identified_gaps:string[]; recommended_service:string|null; score_reason:string|null; last_verified_at:string|null }
+export type BusinessLead = { id:string; business_name:string; website_url:string|null; country:string|null; city:string|null; category:string|null; source_name:string; source_url:string|null; lead_score:number; verification_status:string; created_at:string; website_quality:string|null; identified_gaps:string[]; recommended_service:string|null; score_reason:string|null; last_verified_at:string|null; website_status:string; mobile_responsive:boolean|null; page_load_ms:number|null; seo_issues:string[] }
 export async function loadBusinessLeads(userId:string):Promise<BusinessLead[]> {
   if(!supabase) throw new Error('Database connection is not configured.')
-  const {data,error}=await supabase.from('business_leads').select('id,business_name,website_url,country,city,category,source_name,source_url,lead_score,verification_status,created_at,website_quality,identified_gaps,recommended_service,score_reason,last_verified_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(100)
+  const {data,error}=await supabase.from('business_leads').select('id,business_name,website_url,country,city,category,source_name,source_url,lead_score,verification_status,created_at,website_quality,identified_gaps,recommended_service,score_reason,last_verified_at,website_status,mobile_responsive,page_load_ms,seo_issues').eq('user_id',userId).order('created_at',{ascending:false}).limit(100)
   if(error) throw error
   return (data??[]) as BusinessLead[]
 }
@@ -76,7 +76,7 @@ export async function discoverBusinesses(input:{userId:string;skill:string;count
   throw error
  }
 }
-export type BusinessAnalysis={status:'ok';leadId:string;model:string;score:number;scoreParts:Record<string,number>;websiteQuality:string;identifiedGaps:string[];recommendedService:string|null;evidenceSummary:string;evidenceCount:number;evidence:{title:string;url:string}[];verificationStatus:string;analyzedAt:string}
+export type BusinessAnalysis={status:'ok';leadId:string;model:string;score:number;scoreParts:Record<string,number>;websiteQuality:string;identifiedGaps:string[];recommendedService:string|null;evidenceSummary:string;evidenceCount:number;evidence:{title:string;url:string}[];verificationStatus:string;websiteAudit:Record<string,unknown>;analyzedAt:string}
 export async function enrichBusinessLead(businessLeadId:string):Promise<BusinessAnalysis>{
  if(!supabase)throw new Error('Database connection is not configured.')
  const {data,error}=await supabase.functions.invoke('lead-enrich-score',{body:{businessLeadId}})
