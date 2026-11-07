@@ -2,7 +2,6 @@ import {supabase} from '../../lib/supabase'
 import {pythonApi} from '../../lib/pythonApi'
 export const SOCIAL_QUERY_TEMPLATE_CAPACITY=15
 export type SocialOpportunity={id:string;platform:string;post_url:string;author_name:string|null;post_text:string;posted_at:string|null;country:string|null;city:string|null;requested_service:string|null;budget_text:string|null;urgency:string;buying_intent:string|null;lead_score:number;score_reason:string|null;verification_status:string;created_at:string}
-const platformFor=(url:string)=>{const host=new URL(url).hostname.toLowerCase().replace(/^www\./,'');if(host.includes('linkedin.com'))return 'LinkedIn';if(host.includes('facebook.com')||host==='fb.com')return 'Facebook';if(host.includes('instagram.com'))return 'Instagram';if(host==='x.com'||host.includes('twitter.com'))return 'X';if(host.includes('threads.net'))return 'Threads';return 'Public community'}
 export async function loadSocialOpportunities(userId:string):Promise<SocialOpportunity[]>{
  if(!supabase)throw new Error('Database connection is not configured.')
  const {data,error}=await supabase.from('social_opportunities').select('id,platform,post_url,author_name,post_text,posted_at,country,city,requested_service,budget_text,urgency,buying_intent,lead_score,score_reason,verification_status,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(100)
