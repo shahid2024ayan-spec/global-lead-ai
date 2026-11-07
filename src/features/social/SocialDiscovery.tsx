@@ -34,7 +34,7 @@ export default function SocialDiscovery({userId}:{userId:string}){
   e.preventDefault();setLoading(true);setError('');setNotice('');setJobProgress(2)
   try{
    const r=await discoverSocialOpportunities({userId,skill,country,city,maxResults:resultLimit,onJobCreated:setActiveJobId,onProgress:setJobProgress})
-   setNotice('Checked '+r.searchedCount+' publicly indexed pages using '+r.queries.length+' selected queries from '+r.templateLibrarySize.toLocaleString()+' generated query combinations. '+r.savedCount+' new candidates saved; '+r.duplicateCount+' duplicates skipped.'+(r.partial?' Provider note: '+r.partialError:''))
+   setNotice(r.providerNote+' Checked '+r.searchedCount+' public search queries. '+r.savedCount+' new candidates saved; '+r.duplicateCount+' duplicates skipped.'+(r.partial?' Provider note: '+r.partialError:''))
    await refresh()
   }catch(reason){setError(reason instanceof Error?reason.message:'Social search failed.')}
   finally{setLoading(false);setActiveJobId('');setJobProgress(0);setJobPaused(false)}
