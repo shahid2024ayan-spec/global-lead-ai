@@ -203,3 +203,15 @@
 .crm-activity-item p{margin:4px 0;color:var(--text);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
 .crm-activity-item small{display:block}
 @media(max-width:650px){.crm-add-activity{grid-template-columns:1fr}.crm-add-activity .primary-button{justify-self:start}}
+
+.intelligence-jobs{margin-top:16px;padding:18px}
+.intelligence-jobs .card-title h3{display:flex;align-items:center;gap:8px}
+.intelligence-job-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.intelligence-job-row:last-child{border-bottom:0}
+.intelligence-job-row>div:first-child{display:grid;gap:4px;min-width:0}
+.intelligence-job-row strong{font-size:12px;overflow-wrap:anywhere}
+.intelligence-job-row small{font-size:10px;color:var(--muted)}
+.intelligence-job-status{display:grid;gap:4px;text-align:right;flex:none}
+.intelligence-job-status span{font-size:10px;font-weight:700;text-transform:uppercase;color:#a995ff}
+.intelligence-job-error{color:#fb7185!important;overflow-wrap:anywhere}
+@media(max-width:520px){.intelligence-job-row{align-items:flex-start;flex-direction:column}.intelligence-job-status{text-align:left}}
