@@ -3,10 +3,12 @@ import {MessagesSquare,ExternalLink,LoaderCircle,RefreshCw,Search,ShieldCheck,Ci
 import {discoverSocialOpportunities,loadSocialOpportunities,scoreSocialOpportunity,type SocialOpportunity} from './socialService'
 import {saveSocialToCrm} from '../crm/crmService'
 import {setSearchJobStatus} from '../search/searchService'
+import {SOCIAL_QUERY_TEMPLATE_CAPACITY} from '../discovery/queryTemplateEngine'
 
 export default function SocialDiscovery({userId}:{userId:string}){
  const [skill,setSkill]=useState('Web development')
- const [market,setMarket]=useState('Worldwide')
+ const [country,setCountry]=useState('Pakistan')
+ const [city,setCity]=useState('Sargodha')
  const [items,setItems]=useState<SocialOpportunity[]>([])
  const [resultLimit,setResultLimit]=useState(20)
  const [activeJobId,setActiveJobId]=useState('')
@@ -32,8 +34,8 @@ export default function SocialDiscovery({userId}:{userId:string}){
  const search=async(e:React.FormEvent)=>{
   e.preventDefault();setLoading(true);setError('');setNotice('');setJobProgress(2)
   try{
-   const r=await discoverSocialOpportunities({userId,skill,market,maxResults:resultLimit,onJobCreated:setActiveJobId,onProgress:setJobProgress})
-   setNotice('Checked '+r.searchedCount+' indexed pages across '+r.queries.length+' query variation(s). '+r.savedCount+' new public candidates saved; '+r.duplicateCount+' duplicates skipped.'+(r.partial?' Some batches were limited by the provider: '+r.partialError:''))
+   const r=await discoverSocialOpportunities({userId,skill,country,city,maxResults:resultLimit,onJobCreated:setActiveJobId,onProgress:setJobProgress})
+   setNotice('Checked '+r.searchedCount+' publicly indexed pages using '+r.queries.length+' selected queries from '+r.templateLibrarySize.toLocaleString()+' generated query combinations. '+r.savedCount+' new candidates saved; '+r.duplicateCount+' duplicates skipped.'+(r.partial?' Provider note: '+r.partialError:''))
    await refresh()
   }catch(reason){setError(reason instanceof Error?reason.message:'Social search failed.')}
   finally{setLoading(false);setActiveJobId('');setJobProgress(0);setJobPaused(false)}
@@ -63,14 +65,14 @@ export default function SocialDiscovery({userId}:{userId:string}){
    <div className="live-discovery-icon"><MessagesSquare size={34}/></div>
   </div>
   <section className="search-panel business-search-panel">
-   <div className="panel-heading"><div className="panel-icon"><Search size={19}/></div><div><h2>Find public social requests</h2><p>Search indexed LinkedIn, Facebook and X pages. Private posts are not accessed.</p></div></div>
+   <div className="panel-heading"><div className="panel-icon"><Search size={19}/></div><div><h2>Social opportunity search</h2><p>Independent public-post engine with country and optional city targeting.</p></div></div>
    <form className="business-query-form" onSubmit={search}>
     <label className="field"><span>Your service</span><input value={skill} onChange={e=>setSkill(e.target.value)} maxLength={100} required/></label>
-    <label className="field"><span>Target market</span><input value={market} onChange={e=>setMarket(e.target.value)} maxLength={100} required/></label>
+    <label className="field"><span>Country · 192-country coverage</span><input value={country} onChange={e=>setCountry(e.target.value)} maxLength={100} required placeholder="e.g. Pakistan, United States, UAE"/></label><label className="field"><span>City (optional)</span><input value={city} onChange={e=>setCity(e.target.value)} maxLength={100} placeholder="e.g. Sargodha, Dubai, London"/></label>
     <label className="field"><span>Result target</span><select value={resultLimit} onChange={e=>setResultLimit(Number(e.target.value))}><option value={20}>20 results</option><option value={40}>40 results</option><option value={60}>60 results</option><option value={80}>80 results</option><option value={100}>100 results</option></select></label>
-    <button className="primary-button" type="submit" disabled={loading||refreshing||skill.trim().length<2||market.trim().length<2}>{loading?<><LoaderCircle size={15} className="live-spin"/> Searching…</>:<>Find opportunities <Search size={15}/></>}</button>
+    <button className="primary-button" type="submit" disabled={loading||refreshing||skill.trim().length<2||country.trim().length<2}>{loading?<><LoaderCircle size={15} className="live-spin"/> Searching…</>:<>Find opportunities <Search size={15}/></>}</button>
    </form>
-   <div className="panel-foot"><span><ShieldCheck size={14}/> Public pages only</span><span>Up to 100 results · provider credits apply</span><span>Basic search depth</span></div>
+   <div className="panel-foot"><span><ShieldCheck size={14}/> Public indexed posts only</span><span>{SOCIAL_QUERY_TEMPLATE_CAPACITY.toLocaleString()}+ query combinations</span><span>Up to 100 candidates · provider limits apply</span></div>
   </section>
   {loading&&activeJobId&&<div className="content-card search-job-control"><div className="search-job-control-head"><strong>Discovery job {jobPaused?'paused':'running'}</strong><span>{jobProgress}%</span></div><div className="job-progress-track"><span style={{width:jobProgress+'%'}}/></div><div className="search-job-actions">{jobPaused?<button type="button" className="secondary-button" onClick={()=>void controlJob('running')} disabled={jobControlBusy}>Resume</button>:<button type="button" className="secondary-button" onClick={()=>void controlJob('paused')} disabled={jobControlBusy}>Pause</button>}<button type="button" className="secondary-button search-job-cancel" onClick={()=>void controlJob('cancelled')} disabled={jobControlBusy}>Cancel</button></div><small>Pause/cancel takes effect between provider requests. Keep this page open while the job runs.</small></div>}
   {error&&<div className="integration-error live-search-error"><CircleAlert size={16}/><span>{error}</span></div>}
