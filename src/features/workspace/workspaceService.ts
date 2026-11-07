@@ -1,23 +1,31 @@
 import { supabase } from '../../lib/supabase'
-
-export type WorkspaceCounts = {
-  businesses: number
-  opportunities: number
-  savedLeads: number
+export type WorkspaceCounts={businesses:number;opportunities:number;savedLeads:number}
+export async function loadWorkspaceCounts(userId:string):Promise<WorkspaceCounts>{
+ if(!supabase)throw new Error('Database connection is not configured.')
+ const [businesses,opportunities,savedLeads]=await Promise.all([
+  supabase.from('business_leads').select('id',{count:'exact',head:true}).eq('user_id',userId),
+  supabase.from('social_opportunities').select('id',{count:'exact',head:true}).eq('user_id',userId),
+  supabase.from('saved_leads').select('id',{count:'exact',head:true}).eq('user_id',userId)])
+ const failure=businesses.error??opportunities.error??savedLeads.error
+ if(failure)throw failure
+ return{businesses:businesses.count??0,opportunities:opportunities.count??0,savedLeads:savedLeads.count??0}
 }
-
-export async function loadWorkspaceCounts(userId: string): Promise<WorkspaceCounts> {
-  if (!supabase) throw new Error('Database connection is not configured.')
-  const [businesses, opportunities, savedLeads] = await Promise.all([
-    supabase.from('business_leads').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-    supabase.from('social_opportunities').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-    supabase.from('saved_leads').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-  ])
-  const failure = businesses.error ?? opportunities.error ?? savedLeads.error
-  if (failure) throw failure
-  return {
-    businesses: businesses.count ?? 0,
-    opportunities: opportunities.count ?? 0,
-    savedLeads: savedLeads.count ?? 0,
-  }
+export type IntelligenceRecord={label:string;businesses:number;opportunities:number;averageScore:number}
+export type GlobalIntelligenceData={businesses:number;opportunities:number;partiallyVerified:number;averageBusinessScore:number;averageSocialScore:number;countries:IntelligenceRecord[];services:IntelligenceRecord[];updatedAt:string}
+export async function loadGlobalIntelligence(userId:string):Promise<GlobalIntelligenceData>{
+ if(!supabase)throw new Error('Database connection is not configured.')
+ const [b,s]=await Promise.all([
+  supabase.from('business_leads').select('country,category,lead_score,verification_status,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(500),
+  supabase.from('social_opportunities').select('country,requested_service,lead_score,verification_status,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(500)])
+ if(b.error)throw b.error
+ if(s.error)throw s.error
+ const businesses=b.data??[],social=s.data??[]
+ const aggregate=(key:(row:any)=>string|null|undefined):IntelligenceRecord[]=>{
+  const groups=new Map<string,{businesses:number;opportunities:number;score:number;scored:number}>()
+  for(const row of businesses){const label=key(row)?.trim()||'Not specified';const item=groups.get(label)||{businesses:0,opportunities:0,score:0,scored:0};item.businesses++;if(typeof row.lead_score==='number'){item.score+=row.lead_score;item.scored++}groups.set(label,item)}
+  for(const row of social){const label=key(row)?.trim()||'Not specified';const item=groups.get(label)||{businesses:0,opportunities:0,score:0,scored:0};item.opportunities++;if(typeof row.lead_score==='number'){item.score+=row.lead_score;item.scored++}groups.set(label,item)}
+  return[...groups.entries()].map(([label,v])=>({label,businesses:v.businesses,opportunities:v.opportunities,averageScore:v.scored?Math.round(v.score/v.scored):0})).sort((a,b)=>(b.businesses+b.opportunities)-(a.businesses+a.opportunities)).slice(0,10)
+ }
+ const bs=businesses.map(x=>x.lead_score).filter((x):x is number=>typeof x==='number'),ss=social.map(x=>x.lead_score).filter((x):x is number=>typeof x==='number')
+ return{businesses:businesses.length,opportunities:social.length,partiallyVerified:[...businesses,...social].filter(x=>x.verification_status==='partially_verified'||x.verification_status==='verified').length,averageBusinessScore:bs.length?Math.round(bs.reduce((a,c)=>a+c,0)/bs.length):0,averageSocialScore:ss.length?Math.round(ss.reduce((a,c)=>a+c,0)/ss.length):0,countries:aggregate(row=>row.country),services:aggregate(row=>row.category||row.requested_service),updatedAt:new Date().toISOString()}
 }
