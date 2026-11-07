@@ -1,9 +1,9 @@
 import { supabase } from '../../lib/supabase'
 import { pythonApi } from '../../lib/pythonApi'
-export type BusinessLead = { id:string; business_name:string; website_url:string|null; country:string|null; city:string|null; category:string|null; source_name:string; source_url:string|null; lead_score:number; verification_status:string; created_at:string; website_quality:string|null; identified_gaps:string[]; recommended_service:string|null; score_reason:string|null; last_verified_at:string|null; website_status:string; mobile_responsive:boolean|null; page_load_ms:number|null; seo_issues:string[]; website_audit:Record<string,unknown> }
+export type BusinessLead = { id:string; project_id:string|null; business_name:string; website_url:string|null; country:string|null; city:string|null; category:string|null; source_name:string; source_url:string|null; lead_score:number; verification_status:string; created_at:string; website_quality:string|null; identified_gaps:string[]; recommended_service:string|null; score_reason:string|null; last_verified_at:string|null; website_status:string; mobile_responsive:boolean|null; page_load_ms:number|null; seo_issues:string[]; website_audit:Record<string,unknown> }
 export async function loadBusinessLeads(userId:string):Promise<BusinessLead[]> {
   if(!supabase) throw new Error('Database connection is not configured.')
-  const {data,error}=await supabase.from('business_leads').select('id,business_name,website_url,country,city,category,source_name,source_url,lead_score,verification_status,created_at,website_quality,identified_gaps,recommended_service,score_reason,last_verified_at,website_status,mobile_responsive,page_load_ms,seo_issues,website_audit').eq('user_id',userId).order('created_at',{ascending:false}).limit(100)
+  const {data,error}=await supabase.from('business_leads').select('id,project_id,business_name,website_url,country,city,category,source_name,source_url,lead_score,verification_status,created_at,website_quality,identified_gaps,recommended_service,score_reason,last_verified_at,website_status,mobile_responsive,page_load_ms,seo_issues,website_audit').eq('user_id',userId).order('created_at',{ascending:false}).limit(100)
   if(error) throw error
   return (data??[]) as BusinessLead[]
 }
@@ -70,13 +70,61 @@ export async function discoverBusinesses(input:{userId:string;skill:string;count
   throw error
  }
 }
-export type BusinessAnalysis={status:'ok';leadId:string;model:string;score:number;scoreParts:Record<string,number>;websiteQuality:string;identifiedGaps:string[];recommendedService:string|null;evidenceSummary:string;evidenceCount:number;evidence:{title:string;url:string}[];verificationStatus:string;websiteAudit:Record<string,unknown>;analyzedAt:string}
+export type BusinessAnalysis={
+ status:'ok';leadId:string;model:string;score:number;needScore:number;fitScore:number;confidence:number;
+ needLevel:'strong_need'|'likely_opportunity'|'possible_opportunity'|'insufficient_evidence';
+ needReasons:string[];scoreParts:Record<string,number>;websiteQuality:string;identifiedGaps:string[];
+ recommendedService:string|null;evidenceSummary:string;evidenceCount:number;
+ evidence:{title:string;url:string|null;content?:string;source?:string}[];
+ verificationStatus:string;websiteAudit:Record<string,unknown>;analyzedAt:string
+}
 export async function enrichBusinessLead(businessLeadId:string):Promise<BusinessAnalysis>{
  if(!supabase)throw new Error('Database connection is not configured.')
- const {data,error}=await supabase.functions.invoke('lead-enrich-score',{body:{businessLeadId}})
- if(error){let message=error.message||'Could not analyze this business.';const context=(error as {context?:unknown}).context;if(context&&typeof context==='object'&&'json' in context&&typeof(context as Response).json==='function'){try{const p=await(context as Response).json();if(typeof p?.error==='string')message=p.error}catch{/* retain safe error */}}throw new Error(message)}
- if(!data||data.status!=='ok')throw new Error(data?.error||'The analysis response was invalid.')
- return data as BusinessAnalysis
+ const {data:lead,error:leadError}=await supabase.from('business_leads')
+  .select('id,user_id,project_id,business_name,website_url,country,city,address,category,source_name,source_url,public_email,public_phone')
+  .eq('id',businessLeadId).single()
+ if(leadError||!lead)throw new Error(leadError?.message||'Business candidate not found.')
+ let skill=String(lead.category||'').trim()||'web development'
+ if(lead.project_id){
+  const {data:project}=await supabase.from('search_projects').select('preferences')
+   .eq('id',lead.project_id).eq('user_id',lead.user_id).maybeSingle()
+  const preferences=project?.preferences as Record<string,unknown>|null
+  if(typeof preferences?.skill==='string'&&preferences.skill.trim())skill=preferences.skill.trim()
+ }
+ const result=await pythonApi<BusinessAnalysis>('/api/ai/analyze',{
+  skill,
+  business:{
+   business_name:lead.business_name,website_url:lead.website_url,country:lead.country,
+   city:lead.city,address:lead.address,category:lead.category,source_name:lead.source_name,
+   source_url:lead.source_url,public_email:lead.public_email,public_phone:lead.public_phone
+  }
+ })
+ if(!result||result.status!=='ok')throw new Error('Python business analysis returned an invalid response.')
+ const audit=result.websiteAudit||{}
+ const now=new Date().toISOString()
+ const scoreReason='Business need: '+result.needScore+'/100; skill fit: '+result.fitScore+'/100; confidence: '+Math.round(result.confidence*100)+'%. '+result.needReasons.join(' ')
+ const {error:saveError}=await supabase.from('business_leads').update({
+  website_quality:result.websiteQuality,identified_gaps:result.identifiedGaps,
+  recommended_service:result.recommendedService,lead_score:result.score,score_reason:scoreReason,
+  verification_status:result.verificationStatus,last_verified_at:result.evidenceCount||audit.htmlChecked?now:null,
+  website_status:typeof audit.status==='string'?audit.status:'unknown',
+  website_audit:audit,mobile_responsive:typeof audit.mobileResponsive==='boolean'?audit.mobileResponsive:null,
+  page_load_ms:typeof audit.pageLoadMs==='number'?audit.pageLoadMs:null,
+  seo_issues:Array.isArray(audit.seoIssues)?audit.seoIssues:[],website_audited_at:now
+ }).eq('id',businessLeadId).eq('user_id',lead.user_id)
+ if(saveError)throw new Error('Analysis completed but could not be saved: '+saveError.message)
+ const {data:oldEvidence,error:oldError}=await supabase.from('lead_evidence').select('evidence_url')
+  .eq('business_lead_id',businessLeadId).eq('user_id',lead.user_id)
+ if(oldError)throw new Error('Analysis saved, but evidence could not be checked: '+oldError.message)
+ const known=new Set((oldEvidence??[]).map(row=>row.evidence_url).filter(Boolean))
+ const evidenceRows=result.evidence.filter(item=>typeof item.url==='string'&&/^https?:\\/\\//i.test(item.url)&&!known.has(item.url))
+  .map(item=>({user_id:lead.user_id,business_lead_id:businessLeadId,evidence_type:item.source||'public_web_evidence',
+   description:(item.title+': '+(item.content||result.evidenceSummary)).slice(0,1200),evidence_url:item.url,observed_at:now}))
+ if(evidenceRows.length){
+  const {error:evidenceError}=await supabase.from('lead_evidence').insert(evidenceRows)
+  if(evidenceError)throw new Error('Analysis saved, but evidence could not be saved: '+evidenceError.message)
+ }
+ return {...result,leadId:businessLeadId}
 }
 
 export type LeadEvidence={id:string;evidence_type:string;description:string;evidence_url:string|null;observed_at:string}
