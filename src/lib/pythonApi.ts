@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-const baseUrl = (import.meta.env.VITE_PYTHON_API_URL as string | undefined)?.replace(/\\/$/, '')
+const baseUrl = (import.meta.env.VITE_PYTHON_API_URL as string | undefined)?.replace(/\/$/, '')
 
 export async function pythonApi<T = any>(path: string, body?: unknown): Promise<T> {
   if (!baseUrl) throw new Error('Python API URL is not configured. Add VITE_PYTHON_API_URL to Vercel environment variables after the Render service is deployed.')
