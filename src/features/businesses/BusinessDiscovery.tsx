@@ -5,7 +5,7 @@ import {saveBusinessToCrm} from '../crm/crmService'
 import {enrichBusinessLead,loadBusinessEvidence,type LeadEvidence} from './businessService'
 import {BUSINESS_QUERY_TEMPLATE_CAPACITY} from '../discovery/queryTemplateEngine'
 export default function BusinessDiscovery({userId}:{userId:string}) {
- const [skill,setSkill]=useState('Web development'),[country,setCountry]=useState('Pakistan'),[city,setCity]=useState('Sargodha'),[leads,setLeads]=useState<BusinessLead[]>([]),[resultLimit,setResultLimit]=useState(20)
+ const [skill,setSkill]=useState('Web development'),[country,setCountry]=useState('Pakistan'),[city,setCity]=useState('Sargodha'),[leads,setLeads]=useState<BusinessLead[]>([]),[resultLimit,setResultLimit]=useState(100)
  const [loading,setLoading]=useState(false),[refreshing,setRefreshing]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState(''),[savingLead,setSavingLead]=useState(''),[analyzing,setAnalyzing]=useState(''),[evidenceByLead,setEvidenceByLead]=useState<Record<string,LeadEvidence[]>>({}),[evidenceOpen,setEvidenceOpen]=useState(''),[evidenceLoading,setEvidenceLoading]=useState('')
  const refresh=async()=>{setRefreshing(true);try{setLeads(await loadBusinessLeads(userId))}catch(reason){setError(reason instanceof Error?reason.message:'Could not load saved candidates.')}finally{setRefreshing(false)}}
  useEffect(()=>{void refresh()},[userId])
