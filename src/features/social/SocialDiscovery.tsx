@@ -1,9 +1,8 @@
 import {useEffect,useState} from 'react'
 import {MessagesSquare,ExternalLink,LoaderCircle,RefreshCw,Search,ShieldCheck,CircleAlert,CheckCircle2,BookmarkPlus,BrainCircuit} from 'lucide-react'
-import {discoverSocialOpportunities,loadSocialOpportunities,scoreSocialOpportunity,type SocialOpportunity} from './socialService'
+import {discoverSocialOpportunities,loadSocialOpportunities,scoreSocialOpportunity,type SocialOpportunity,SOCIAL_QUERY_TEMPLATE_CAPACITY} from './socialService'
 import {saveSocialToCrm} from '../crm/crmService'
 import {setSearchJobStatus} from '../search/searchService'
-import {SOCIAL_QUERY_TEMPLATE_CAPACITY} from '../discovery/queryTemplateEngine'
 
 export default function SocialDiscovery({userId}:{userId:string}){
  const [skill,setSkill]=useState('Web development')
