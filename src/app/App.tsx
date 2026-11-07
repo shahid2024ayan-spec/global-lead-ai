@@ -48,7 +48,7 @@ function App() {
     setNotice('')
     try {
       const project = await saveSearchSetup({ userId: user.id, skill, region, source })
-      setNotice(`Search profile saved: ${project.name}. Opening Smart Discovery…`); setSection('Businesses')
+      setNotice(`Search profile saved: ${project.name}. Opening Smart Discovery…`); setSection(source === 'Social opportunities' ? 'Social opportunities' : 'Businesses')
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'Could not save your search setup. Please try again.')
     } finally {
