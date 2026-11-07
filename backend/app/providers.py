@@ -72,7 +72,7 @@ def search_businesses(skill: str, country: str, city: str | None, limit: int = 1
 
 def _clean(value: str) -> str:
     value = re.sub(r"<[^>]+>", " ", value or "")
-    return html.unescape(re.sub(r"\\s+", " ", value)).strip()
+    return html.unescape(re.sub(r"\s+", " ", value)).strip()
 
 def search_social(skill: str, country: str, city: str | None, limit: int = 100) -> dict:
     area = city or country
