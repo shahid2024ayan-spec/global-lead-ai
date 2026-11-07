@@ -215,3 +215,16 @@
 .intelligence-job-status span{font-size:10px;font-weight:700;text-transform:uppercase;color:#a995ff}
 .intelligence-job-error{color:#fb7185!important;overflow-wrap:anywhere}
 @media(max-width:520px){.intelligence-job-row{align-items:flex-start;flex-direction:column}.intelligence-job-status{text-align:left}}
+
+/* Batched discovery job controls */
+.business-query-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 145px auto}
+.search-job-control{margin-top:16px;padding:16px}
+.search-job-control-head{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.search-job-control-head span{color:#b9a7ff;font-weight:700}
+.job-progress-track{height:6px;background:var(--line);border-radius:9px;overflow:hidden;margin:12px 0}
+.job-progress-track span{display:block;height:100%;background:linear-gradient(90deg,#8b5cf6,#60a5fa);transition:width .25s ease}
+.search-job-actions{display:flex;gap:8px;margin-bottom:9px}
+.search-job-actions .secondary-button{height:34px;margin:0}
+.search-job-actions .search-job-cancel{color:#fb7185}
+.search-job-control>small{font-size:10px;color:var(--muted)}
+@media(max-width:760px){.business-query-form{grid-template-columns:1fr}.search-job-actions{flex-wrap:wrap}}
