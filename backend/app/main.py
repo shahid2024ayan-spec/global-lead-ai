@@ -8,7 +8,7 @@ from .providers import search_businesses, search_social
 from .analyzer import analyze_business, score_social_opportunity
 
 settings = get_settings()
-app = FastAPI(title="GlobalLead AI Python API", version="1.0.0", description="Free-first discovery and intelligence backend")
+app = FastAPI(title="GlobalLead AI Python API", version="1.1.0", description="Free-first discovery and intelligence backend", docs_url="/api/docs", openapi_url="/api/openapi.json")
 origins = [x.strip() for x in settings.allowed_origins.split(",") if x.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Authorization", "Content-Type"])
 
@@ -46,9 +46,17 @@ async def require_user(authorization: str | None = Header(default=None)):
 async def health():
     return {"status": "ok", "service": "global-lead-ai-python", "authConfigured": bool(settings.supabase_url and settings.supabase_anon_key), "aiConfigured": bool(settings.gemini_api_key), "model": settings.gemini_model if settings.gemini_api_key else None}
 
+@app.get("/api/health")
+async def api_health():
+    return await health()
+
 @app.get("/")
 async def root():
     return {"name": "GlobalLead AI Python API", "docs": "/docs", "health": "/health"}
+
+@app.get("/api")
+async def api_root():
+    return {"name": "GlobalLead AI Python API", "docs": "/api/docs", "health": "/api/health"}
 
 @app.post("/api/discover/businesses")
 async def businesses(payload: DiscoveryRequest, user=Depends(require_user)):
