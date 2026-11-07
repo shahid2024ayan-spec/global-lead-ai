@@ -228,3 +228,43 @@
 .search-job-actions .search-job-cancel{color:#fb7185}
 .search-job-control>small{font-size:10px;color:var(--muted)}
 @media(max-width:760px){.business-query-form{grid-template-columns:1fr}.search-job-actions{flex-wrap:wrap}}
+
+
+/* Smart Discovery — shared business and social search experience */
+.business-discovery-page,.social-discovery-page{max-width:1240px;padding-top:32px}
+.live-discovery-header{align-items:center;gap:24px;margin-bottom:27px}
+.live-discovery-header>div:first-child{min-width:0}
+.live-discovery-header h1{font-size:clamp(29px,3.4vw,42px);letter-spacing:-1.5px}
+.live-discovery-header p{max-width:620px;font-size:12px}
+.live-discovery-icon{width:82px;height:82px;flex:none;border-radius:24px;background:linear-gradient(145deg,#8b6bff28,#4d83f326);box-shadow:inset 0 0 28px #8b6bff12}
+.business-search-panel{padding:23px 24px 16px;border-color:#9276ff45;background:linear-gradient(135deg,#171d38 0%,#11182b 68%,#121b32 100%);box-shadow:0 18px 55px #00000020}
+.theme-light .business-search-panel{background:linear-gradient(135deg,#f0edff 0%,#fff 68%,#f2f5ff 100%)}
+.business-search-panel .panel-heading{align-items:flex-start}
+.business-search-panel .panel-heading h2{font-size:18px;letter-spacing:-.35px}
+.business-search-panel .panel-heading p{font-size:11px;line-height:1.6}
+.business-query-form{grid-template-columns:minmax(150px,1.2fr) minmax(145px,1fr) minmax(125px,.85fr) 135px auto;gap:11px;margin-top:22px}
+.business-query-form .field{min-width:0}
+.business-query-form .field>span{font-size:10px;letter-spacing:.1px}
+.business-query-form input,.business-query-form select{height:46px;border-radius:10px;font-size:12px;padding-left:13px}
+.business-query-form .primary-button{height:46px;border-radius:10px;padding:0 18px;font-size:11px}
+.quick-discovery-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:15px}
+.quick-discovery-row>span{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:10px;font-weight:600;margin-right:3px}
+.quick-discovery-row>span svg{color:#b5a1ff}
+.quick-discovery-chip{min-height:30px;padding:0 11px;border:1px solid var(--line);border-radius:20px;background:#ffffff06;color:var(--muted);font:500 10px 'DM Sans';cursor:pointer;transition:all .18s ease}
+.quick-discovery-chip:hover,.quick-discovery-chip.active{border-color:#9b83ff80;background:#8b6bff20;color:#d6ccff}
+.panel-foot{gap:16px;flex-wrap:wrap;margin-top:14px}
+.panel-foot span{font-size:10px}
+.business-list-heading{margin-top:30px}
+.business-list-heading h2{font-size:18px}
+.business-candidate-list{gap:12px}
+.business-candidate-card{padding:18px;border-radius:14px;transition:border-color .18s ease,transform .18s ease}
+.business-candidate-card:hover{border-color:#9276ff55;transform:translateY(-1px)}
+.business-candidate-icon{width:42px;height:42px;flex-basis:42px;border-radius:12px}
+.business-candidate-top h3{font-size:14px}
+.business-candidate-main>p,.business-candidate-meta{font-size:11px}
+.social-post-preview{font-size:12px;line-height:1.7}
+.candidate-actions{gap:12px;flex-wrap:wrap}
+.integration-security{border-radius:12px;line-height:1.65}
+@media(max-width:1050px){.business-query-form{grid-template-columns:1fr 1fr 1fr 130px}.business-query-form .primary-button{grid-column:1/-1;justify-self:start;min-width:190px}}
+@media(max-width:700px){.business-discovery-page,.social-discovery-page{padding:24px 16px}.live-discovery-header{margin-bottom:20px}.live-discovery-header h1{font-size:30px}.live-discovery-icon{width:58px;height:58px;border-radius:17px}.live-discovery-icon svg{width:25px}.business-search-panel{padding:18px 15px 14px}.business-query-form{grid-template-columns:1fr 1fr}.business-query-form .primary-button{grid-column:1/-1;width:100%}.business-candidate-card{padding:13px;gap:10px}.business-candidate-top{align-items:flex-start;flex-direction:column}.candidate-status{align-self:flex-start}}
+@media(max-width:440px){.business-query-form{grid-template-columns:1fr}.business-query-form .primary-button{grid-column:auto}.quick-discovery-row{gap:6px}.quick-discovery-chip{font-size:9px;padding:0 9px}.panel-foot{gap:9px;flex-direction:column}}
