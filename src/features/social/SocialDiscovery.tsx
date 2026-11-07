@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react'
-import {MessagesSquare,ExternalLink,LoaderCircle,RefreshCw,Search,ShieldCheck,CircleAlert,CheckCircle2,BookmarkPlus,BrainCircuit} from 'lucide-react'
-import {discoverSocialOpportunities,loadSocialOpportunities,scoreSocialOpportunity,type SocialOpportunity,SOCIAL_QUERY_TEMPLATE_CAPACITY} from './socialService'
+import {MessagesSquare,ExternalLink,LoaderCircle,RefreshCw,Search,ShieldCheck,CircleAlert,CheckCircle2,BookmarkPlus,BrainCircuit,Sparkles} from 'lucide-react'
+import {discoverSocialOpportunities,loadSocialOpportunities,scoreSocialOpportunity,type SocialOpportunity} from './socialService'
 import {saveSocialToCrm} from '../crm/crmService'
 import {setSearchJobStatus} from '../search/searchService'
 
@@ -60,11 +60,11 @@ export default function SocialDiscovery({userId}:{userId:string}){
 
  return <div className="page-content social-discovery-page">
   <div className="live-discovery-header">
-   <div><div className="eyebrow"><span className="eyebrow-dot"/> MODULE 06 · PUBLIC SOCIAL OPPORTUNITIES</div><h1>Spot active <span className="gradient-text">buyer demand.</span></h1><p>Search publicly indexed social posts that may signal a real need for your service.</p></div>
+   <div><div className="eyebrow"><span className="eyebrow-dot"/> SMART DISCOVERY · SOCIAL DEMAND</div><h1>Find people who <span className="gradient-text">need your skills.</span></h1><p>Discover public hiring signals, project requests, and service needs from indexed sources.</p></div>
    <div className="live-discovery-icon"><MessagesSquare size={34}/></div>
   </div>
   <section className="search-panel business-search-panel">
-   <div className="panel-heading"><div className="panel-icon"><Search size={19}/></div><div><h2>Social opportunity search</h2><p>Independent public-post engine with country and optional city targeting.</p></div></div>
+   <div className="panel-heading"><div className="panel-icon"><Search size={19}/></div><div><h2>Smart social search</h2><p>Search public posts for hiring signals, project requests, and people looking for your service.</p></div></div>
    <form className="business-query-form" onSubmit={search}>
     <label className="field"><span>Your service</span><input value={skill} onChange={e=>setSkill(e.target.value)} maxLength={100} required/></label>
     <label className="field"><span>Country · 192-country coverage</span><input value={country} onChange={e=>setCountry(e.target.value)} maxLength={100} required placeholder="e.g. Pakistan, United States, UAE"/></label><label className="field"><span>City (optional)</span><input value={city} onChange={e=>setCity(e.target.value)} maxLength={100} placeholder="e.g. Sargodha, Dubai, London"/></label>
