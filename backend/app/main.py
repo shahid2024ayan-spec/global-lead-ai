@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from .config import get_settings
 from .providers import search_businesses, search_social
+from .analyzer import analyze_business
 
 settings = get_settings()
 app = FastAPI(title="GlobalLead AI Python API", version="1.0.0", description="Free-first discovery and intelligence backend")
@@ -55,16 +56,10 @@ async def social(payload: DiscoveryRequest, user=Depends(require_user)):
 
 @app.post("/api/ai/analyze")
 async def analyze(payload: AnalyzeRequest, user=Depends(require_user)):
-    if not settings.gemini_api_key:
-        raise HTTPException(status_code=503, detail="Gemini is not configured. Add GEMINI_API_KEY in Render environment settings.")
     try:
-        from google import genai
-        client = genai.Client(api_key=settings.gemini_api_key)
-        prompt = ("Analyze this public business candidate for the user's service. Use only supplied facts. "
-                  "Return concise JSON with fitScore (0-100), detectedNeeds (array), evidenceGaps (array), "
-                  "recommendedApproach, confidence, and caveats. Never invent contact details or claim intent without evidence. "
-                  f"Skill: {payload.skill}\\nCandidate: {payload.business}")
-        response = client.models.generate_content(model=settings.gemini_model, contents=prompt)
-        return {"status": "ok", "provider": "gemini", "model": settings.gemini_model, "analysis": response.text or "No analysis returned."}
+        result = await __import__("asyncio").to_thread(analyze_business, payload.skill, payload.business)
+        return result
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Gemini request failed: {type(exc).__name__}")
+        raise HTTPException(status_code=502, detail=f"Business analysis failed: {type(exc).__name__}. Check API key, model availability and provider limits.")
