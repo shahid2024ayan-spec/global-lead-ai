@@ -178,3 +178,28 @@
 .crm-draft-preview .crm-draft-body{max-height:260px;overflow:auto}
 .crm-draft-preview small{font-size:9px;color:var(--muted)}
 @media(max-width:420px){.crm-outreach-row{flex-direction:column;align-items:stretch}.crm-outreach-row .field{width:100%}}
+
+/* CRM timeline and reminder panels */
+.crm-reminders{margin:18px 0;padding:18px}
+.crm-reminders .card-title h3{display:flex;align-items:center;gap:8px}
+.crm-reminder-list{display:grid;gap:10px;margin-top:14px}
+.crm-reminder-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:12px}
+.crm-reminder-item>div{display:grid;gap:3px;flex:1;min-width:0}
+.crm-reminder-item strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crm-reminder-item small,.crm-activity-item small{color:var(--muted);font-size:11px}
+.crm-overdue,.crm-upcoming{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.crm-overdue{color:#fb7185}.crm-upcoming{color:#60a5fa}
+.crm-activity-toggle{margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.crm-activity-panel{margin-top:12px;padding:14px;background:var(--surface-2,rgba(255,255,255,.025));border:1px solid var(--border);border-radius:14px}
+.crm-add-activity{display:grid;grid-template-columns:140px 1fr auto;gap:8px;align-items:start}
+.crm-add-activity select,.crm-add-activity textarea{width:100%;min-width:0;background:var(--input-bg,rgba(255,255,255,.04));border:1px solid var(--border);border-radius:9px;padding:10px;color:inherit;font:inherit;font-size:12px}
+.crm-add-activity textarea{resize:vertical}
+.crm-add-activity .primary-button{min-height:38px;white-space:nowrap}
+.crm-activity-list{display:grid;gap:12px;margin-top:16px}
+.crm-activity-item{display:flex;gap:10px;align-items:flex-start}
+.crm-activity-dot{width:8px;height:8px;border-radius:50%;background:#8b5cf6;margin-top:5px;flex:none}
+.crm-activity-item>div{min-width:0}
+.crm-activity-item strong{font-size:12px;text-transform:capitalize}
+.crm-activity-item p{margin:4px 0;color:var(--text);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.crm-activity-item small{display:block}
+@media(max-width:650px){.crm-add-activity{grid-template-columns:1fr}.crm-add-activity .primary-button{justify-self:start}}
