@@ -39,7 +39,7 @@ export async function loadGlobalIntelligence(userId:string):Promise<GlobalIntell
   for(const row of social){const label=key(row)?.trim()||'Not specified';const item=groups.get(label)||{businesses:0,opportunities:0,score:0,scored:0};item.opportunities++;item.score+=row.lead_score;item.scored++;groups.set(label,item)}
   return[...groups.entries()].map(([label,v])=>({label,businesses:v.businesses,opportunities:v.opportunities,averageScore:v.scored?Math.round(v.score/v.scored):0})).sort((a,b)=>(b.businesses+b.opportunities)-(a.businesses+a.opportunities)).slice(0,10)
  }
- const bs=businesses.map(x=>x.lead_score),ss=social.map(x=>x.lead_score)
+ const bs=businesses.map(x=>x.lead_score).filter(x=>x>0),ss=social.map(x=>x.lead_score).filter(x=>x>0)
  return{businesses:businesses.length,opportunities:social.length,partiallyVerified:[...businesses,...social].filter(x=>x.verification_status==='partially_verified'||x.verification_status==='verified').length,averageBusinessScore:bs.length?Math.round(bs.reduce((a,c)=>a+c,0)/bs.length):0,averageSocialScore:ss.length?Math.round(ss.reduce((a,c)=>a+c,0)/ss.length):0,countries:aggregate(row=>row.country),services:aggregate(row=>row.category||row.requested_service),updatedAt:new Date().toISOString()}
 }
 
