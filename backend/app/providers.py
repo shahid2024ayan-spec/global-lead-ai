@@ -12,8 +12,14 @@ SESSION.headers.update({"User-Agent": settings.user_agent, "Accept": "applicatio
 
 BUYER_INDUSTRIES = {
     "web development": ["retail shops", "restaurants and cafes", "clinics", "hotels", "real estate offices", "schools", "fitness centres"],
+    "website design": ["retail shops", "restaurants and cafes", "clinics", "hotels", "real estate offices", "schools", "professional offices"],
     "software development": ["retail shops", "logistics and transport businesses", "clinics", "schools", "hotels", "professional offices"],
     "mobile app development": ["restaurants and cafes", "hotels", "fitness centres", "retail shops", "schools", "transport businesses"],
+    "e-commerce": ["retail shops", "fashion boutiques", "electronics shops", "wholesale businesses", "grocery stores", "craft shops"],
+    "ai automation": ["professional offices", "clinics", "real estate offices", "hotels", "logistics and transport businesses", "schools", "accounting firms"],
+    "automation": ["professional offices", "clinics", "real estate offices", "hotels", "logistics and transport businesses", "schools", "accounting firms"],
+    "ui/ux design": ["software businesses", "professional offices", "retail shops", "clinics", "hotels", "schools"],
+    "accounting": ["retail shops", "restaurants and cafes", "professional offices", "clinics", "real estate offices", "logistics businesses"],
     "digital marketing": ["retail shops", "restaurants and cafes", "clinics", "hotels", "real estate offices", "fitness centres", "schools"],
     "seo": ["retail shops", "restaurants and cafes", "clinics", "hotels", "real estate offices", "professional offices"],
     "graphic design": ["retail shops", "restaurants and cafes", "hotels", "real estate offices", "fitness centres", "schools"],
