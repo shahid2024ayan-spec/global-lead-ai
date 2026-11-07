@@ -37,7 +37,7 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
   if(existingError)throw existingError
   for(const row of existing??[])seen.add(row.post_url)
   let partialError=''
-  for(let i=0;i<querySet.length;i++){
+  for(let i=0;i<querySet.length&&savedCount<maxResults;i++){
    await waitForSocialJob(input.userId,job.id)
    const query=querySet[i]
    const{data:response,error:searchError}=await supabase.functions.invoke('lead-discovery',{body:{query,maxResults:perQueryLimit,searchDepth:'basic'}})
@@ -65,7 +65,8 @@ export async function discoverSocialOpportunities(input:{userId:string;skill:str
    candidateCount+=allowed.length
    const fresh=allowed.filter(item=>{if(seen.has(item.url))return false;seen.add(item.url);return true})
    duplicateCount+=allowed.length-fresh.length
-   const rows=fresh.map(item=>({user_id:input.userId,project_id:project.id,search_job_id:job.id,platform:platformFor(item.url),post_url:item.url,post_text:item.content.trim().slice(0,4000),posted_at:item.publishedDate&&!Number.isNaN(Date.parse(item.publishedDate))?new Date(item.publishedDate).toISOString():null,requested_service:skill,urgency:'unknown',buying_intent:'Potential public request — review the original post before qualification.',lead_score:0,score_reason:'Not scored yet. Buying intent and author must be verified.',verification_status:'unverified'}))
+   const accepted=fresh.slice(0,Math.max(0,maxResults-savedCount))
+   const rows=accepted.map(item=>({user_id:input.userId,project_id:project.id,search_job_id:job.id,platform:platformFor(item.url),post_url:item.url,post_text:item.content.trim().slice(0,4000),posted_at:item.publishedDate&&!Number.isNaN(Date.parse(item.publishedDate))?new Date(item.publishedDate).toISOString():null,requested_service:skill,urgency:'unknown',buying_intent:'Potential public request — review the original post before qualification.',lead_score:0,score_reason:'Not scored yet. Buying intent and author must be verified.',verification_status:'unverified'}))
    if(rows.length){const{error}=await supabase.from('social_opportunities').insert(rows);if(error)throw error;savedCount+=rows.length}
    const progress=Math.min(90,Math.round(((i+1)/querySet.length)*90))
    const{error:progressError}=await supabase.from('search_jobs').update({progress,opportunities_found:savedCount}).eq('id',job.id).eq('user_id',input.userId)
