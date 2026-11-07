@@ -1,6 +1,6 @@
 # GlobalLead AI — Python intelligence backend
 
-FastAPI powers discovery and AI qualification. React/Vite is the frontend; Supabase remains authentication, database and CRM storage. The FastAPI app is exposed through the Vercel Python function at `api/index.py`.
+FastAPI powers discovery and AI qualification. React/Vite is the frontend; Supabase remains authentication, database and CRM storage. The FastAPI app is deployed as a dedicated Vercel Service rooted at `backend/` with entrypoint `app.main:app`. The root Vercel routing rules send `/api/*` requests to this backend and all other routes to the Vite frontend.
 
 ## Local run
 
